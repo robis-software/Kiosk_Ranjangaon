@@ -1,6 +1,10 @@
 ./node_modules
 node_modules/
 
+#Contains data only for this machine
+./Databases
+Databases/
+
 logs
 *.log
 

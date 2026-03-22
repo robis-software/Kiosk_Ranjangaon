@@ -1,17 +1,21 @@
 import express, { Application, NextFunction, Request, Response } from "express";
 import cors from 'cors';
 import dotenv from "dotenv";
-import indexRouter from "../routes/index.routes";
+import indexRouter from "./routes/index.routes";
 
 // Declaring the  Dotenv
 dotenv.config();
 
 // Creating an Instance to express in the name of app
 const app: Application = express();
+const corsOptions = {
+  origin: 'http://localhost:4200',
+  credentials: true
+}
 
 // Middleware is used to use the JSON as response and CORS policy for Identification
 app.use(express.json());
-app.use(cors());
+app.use(cors(corsOptions));
 
 app.use(indexRouter);
 
