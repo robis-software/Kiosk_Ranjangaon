@@ -1,0 +1,30 @@
+<div class="flex items-end justify-between w-screen h-[70px] px-5 gap-4 duration-1000">
+
+  <!-- Robot Name -->
+  <div class="flex items-center justify-start gap-2 p-3 w-[250px] h-[50px] border-2 border-lightGray rounded-[6px]">
+    <ranjangaon-icons [icon]="'robot'" [size]="30" [color]="'#DA2127'"></ranjangaon-icons>
+    <p class="text-[20px] font-medium text-darkAsh w-[200px] overflow-ellipsis whitespace-nowrap overflow-hidden">Robot Name</p>
+  </div>
+
+  <!-- <div class="relative w-full h-full top-[20px]">
+      <div class="absolute grid w-full gap-3 h-max">
+          <div *ngIf="config.battery.min > (liveData ? liveData.battery : 100)" class="flex items-center justify-center gap-2 p-3 w-full h-[50px] border-2 border-status-red rounded-[6px] bg-status-red">
+            <p class="text-[20px] font-normal text-white">Battery Low!</p>
+          </div>
+          <div *ngIf="(liveData ? liveData.localisation.error : false)" class="flex items-center justify-center gap-2 p-3 w-full h-[50px] border-2 border-status-yellow rounded-[6px] bg-status-yellow">
+            <p class="text-[20px] font-normal text-white">Robot De-localized</p>
+          </div>
+      </div>
+  </div> -->
+
+  <div class="flex items-center justify-center gap-4 w-max h-[50px]">
+    <button (click)="goToLogs()" class="flex items-center justify-center size-[50px] rounded-[6px] bg-lavender">
+      <ranjangaon-icons [icon]="'logs'" [size]="26" [color]="'#FFFFFF'"></ranjangaon-icons>
+    </button>
+
+    <div class="flex items-center justify-start gap-2 px-6 h-[50px] border-2 border-lightGray rounded-[6px]">
+      <div [ngClass]="{'bg-status-green': liveData.live, 'bg-status-red': !liveData.live}" class="size-[16px] rounded-full"></div>
+      <p class="text-[20px] font-medium text-black w-[65px]">{{liveData.live ? 'Online' : 'Offline'}}</p>
+    </div>
+  </div>
+</div>

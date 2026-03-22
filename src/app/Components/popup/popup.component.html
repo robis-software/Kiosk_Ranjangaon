@@ -1,0 +1,13 @@
+<div class="absolute top-0 left-0 z-40 flex items-center justify-center w-screen h-screen bg-black bg-opacity-20 backdrop-blur-sm">
+  <div [ngStyle]="{'width': width}" class="flex flex-col h-max items-start justify-start p-10 rounded-[16px] animate-slideFromDown bg-white">
+    <div class="flex items-center justify-between w-full">
+      <p class="text-[36px] font-bold text-primary">{{title}}</p>
+
+      <button *ngIf="isClose" (click)=" this.view.emit(false);" class="size-[50px] rounded-[6px] bg-primary flex items-center justify-center">
+        <ranjangaon-icons [icon]="'close'" [size]="54" [color]="'#FFFFFF'"></ranjangaon-icons>
+      </button>
+    </div>
+
+    <ng-content></ng-content>
+  </div>
+</div>

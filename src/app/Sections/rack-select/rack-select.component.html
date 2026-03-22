@@ -1,0 +1,30 @@
+<div class="flex flex-col items-center justify-start w-full h-full gap-4 pb-4 animate-slideFromDown">
+    <div class="flex items-center justify-between w-full h-max">
+        <fleet-title [title]="'Create Task'" [subTitle]="'Creating a task to drop the item in the respective location'" [type]="1"></fleet-title>
+
+        <button (click)="goHome()" class="size-[62px] rounded-[6px] bg-primary flex items-center justify-center">
+            <ranjangaon-icons [icon]="'home'" [size]="34" [color]="'#FFFFFF'"></ranjangaon-icons>
+        </button>
+    </div>
+
+    <div class="flex flex-col gap-3 p-4 rounded-[14px] border-2 border-lightGray bg-rackSelect w-full h-max">
+        <p class="text-[16px] text-primary font-medium">Item loaded on</p>
+        <button class="flex items-center justify-between w-full h-max">
+            <p class="text-[32px] font-semibold text-black">{{rackId < 10 ? ('RACK - 0' + rackId) : ('RACK - ' + rackId)}}</p>
+            <ranjangaon-icons [icon]="'rack'" [size]="46" [color]="colors.primary"></ranjangaon-icons>
+        </button>
+    </div>
+
+    <div class="flex flex-col gap-3 p-4 rounded-[14px] border-2 border-lightGray bg-rackSelect w-full h-full">
+        <p class="text-[16px] text-primary font-medium">Select Drop Location</p>
+        <div class="grid w-full grid-cols-3 gap-2 h-max">
+            @for (location of locations; track $index) {
+                <button (click)="addTask(location.id)" class="flex flex-col items-start justify-start w-full h-[200px] border-2 border-lightGray rounded-[14px] bg-white p-6">
+                    <p class="text-[14px] text-darkAsh">Drop Location</p>
+                    <p class="text-[40px] text-black font-semibold mt-2">{{location.id ? location.id < 9 ? ('LOC - 0'+location.id): ('LOC - '+location.id) : '--'}}</p>
+                    <ranjangaon-icons class="mt-3" [icon]="'location'" [size]="60" [color]="colors.primary"></ranjangaon-icons>
+                </button>
+            }
+        </div>
+    </div>
+</div>

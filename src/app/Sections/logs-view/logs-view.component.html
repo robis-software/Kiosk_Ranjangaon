@@ -1,0 +1,62 @@
+<div class="flex flex-col items-start justify-start w-full h-full gap-5 animate-slideFromDown">
+
+    <div class="flex items-center justify-between w-full mt-8 h-max">
+        <button [routerLink]="'/logs'" class="flex items-center justify-center bg-racks size-[62px] rounded-[6px]">
+            <ranjangaon-icons [icon]="'goBack'" [size]="34" [color]="colors.primary"></ranjangaon-icons>
+        </button>
+
+        <span class="flex flex-col items-center justify-center">
+            <p class="text-[36px] font-semibold text-primary">{{fileName}}</p>
+            <p class="text-[16px] text-darkAsh">Log file name</p>
+        </span>
+
+        <button [routerLink]="'/'" class="flex items-center justify-center bg-primary size-[62px] rounded-[6px]">
+            <ranjangaon-icons [icon]="'home'" [size]="34" [color]="'#FFFFFF'"></ranjangaon-icons>
+        </button>
+    </div>
+
+    <div class="flex flex-col items-start w-full h-full overflow-hidden justify-normal">
+
+        <!-- Time Filter -->
+        <div class="flex items-center justify-center w-full h-[105px] border-2 border-lightGray rounded-[12px]">
+            <button (click)="changeTime('decr')" class="flex items-center justify-center bg-racks size-[62px] rounded-[6px] active:bg-lightGray">
+                <ranjangaon-icons [icon]="'arrow'" [size]="34" [color]="colors.primary"></ranjangaon-icons>
+            </button>
+
+            <span class="flex flex-col items-center justify-center ">
+                <p class="text-[16px] font-medium text-lavender">Currently data is between</p>
+                <p class="text-[40px] font-semibold text-darkAsh -mt-2 w-[340px] text-center">{{timeFormatter(currentTimeInHours)}} - {{timeFormatter(currentTimeInHours+1)}}</p>
+            </span>
+
+            <button (click)="changeTime('incr')" class="flex items-center justify-center bg-racks size-[62px] rounded-[6px] active:bg-lightGray">
+                <ranjangaon-icons class="rotate-180" [icon]="'arrow'" [size]="34" [color]="colors.primary"></ranjangaon-icons>
+            </button>
+        </div>
+
+        <div class="w-full h-[calc(100%-100px)] overflow-scroll mt-6 ">
+
+            @if (logsInFile.length > 0) {
+                <div class="flex flex-col w-full gap-3 h-max animate-slideFromDown">
+                    @for (log of logsInFile; track $index) {
+                        <div class="flex items-center justify-start w-full min-h-[90px] overflow-hidden border-2 border-lightGray rounded-[8px]">
+                            <div class="min-w-[120px] min-h-[86px] flex items-center justify-center bg-keys">
+                                <p class="text-[40px] font-semibold text-status-green">{{log.status}}</p>
+                            </div>
+                            <div class="flex items-center justify-between w-full px-5 h-max">
+                                <p class="text-[20px] text-darkAsh">{{log.title}}</p>
+                                <p class="text-[20px] text-darkAsh">{{log.time}}</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            @else {
+                <div class="flex items-start justify-center w-full h-full pt-32 animate-slideFromDown">
+                     <fleet-illustrations [illustration]="'noData'" [size]='500'></fleet-illustrations>
+                </div>
+            }
+        </div>
+    </div>
+
+
+</div>

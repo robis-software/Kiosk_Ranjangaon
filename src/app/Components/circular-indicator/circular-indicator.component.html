@@ -1,0 +1,42 @@
+  <div class="relative flex items-center justify-center w-max h-max">
+    <svg
+      #indicator
+      [attr.width]="size"
+      [attr.height]="size"
+      viewBox="0 0 320 320"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class="flex items-center justify-center"
+    >
+      <!-- Background circle with rounded stroke -->
+      <circle
+        cx="160"
+        cy="160"
+        [attr.r]="svgOptions.radius"
+        fill="none"
+        stroke="#E8E8E8"
+        [attr.stroke-width]="svgOptions.strokeWidth"
+        [attr.stroke-dasharray]="svgOptions.startCircumference.toString() + ' ' + svgOptions.endCircumference.toString()"
+        [attr.transform]="'rotate(0 160 160)'"
+      />
+      <!-- Progress arc (green) with rounded stroke -->
+      <circle
+        cx="160"
+        cy="160"
+        [attr.r]="svgOptions.radius"
+        fill="none"
+        [attr.stroke]="color"
+        [attr.stroke-width]="svgOptions.strokeWidth"
+        [attr.stroke-dasharray]="svgOptions.startCircumference.toString() + ' ' + svgOptions.endCircumference.toString()"
+        [attr.stroke-dashoffset]="svgOptions.startCircumference * (1 - value / 100)"
+        transform="rotate(0 160 160)"
+        style="transition: stroke-dashoffset 0.3s ease"
+      />
+      <!-- Center circle -->
+      <circle cx="160" cy="160" r="80" fill="white" />
+    </svg>
+
+    <div class="absolute flex items-center justify-center w-max h-max">
+      <ng-content></ng-content>
+    </div>
+  </div>

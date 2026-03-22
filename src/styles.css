@@ -1,1 +1,57 @@
-/* You can add global styles to this file, and also import other style files */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Graphik';
+  src: url("./assets/Fonts/GraphikLight.otf") format("opentype");
+  font-weight: 300; /* Use numeric value for medium */
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Graphik';
+  src: url("./assets/Fonts/GraphikRegular.otf") format("opentype");
+  font-weight: 400; /* Use numeric value for medium */
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Graphik';
+  src: url("./assets/Fonts/GraphikMedium.otf") format("opentype");
+  font-weight: 500; /* Use numeric value for medium */
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Graphik';
+  src: url("./assets/Fonts/GraphikSemibold.otf") format("opentype");
+  font-weight: 600; /* Semibold is usually 600 */
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Graphik';
+  src: url("./assets/Fonts/GraphikBold.otf") format("opentype");
+  font-weight: 700; /* Bold is usually 700 */
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Graphik';
+  src: url("./assets/Fonts/GraphikSuper.otf") format("opentype");
+  font-weight: 900; /* Use numeric value for bolder */
+  font-style: normal;
+}
+
+* {
+  font-family: 'Graphik', Arial, sans-serif;
+  font-size: 12px;
+  --webkit-user-select: none;
+  --ms-user-select: none;
+  --moz-user-select: none;
+  --safari-user-select: none;
+}
+
+::-webkit-scrollbar{
+  width: 0px;
+}
