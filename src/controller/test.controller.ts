@@ -141,11 +141,11 @@ class TestController {
         let liveData = {
             live: Math.random() >= 0.5,
             // battery: calculateRandomScore(100),
-            battery: 20,
+            battery: 22,
             speed: +(Math.random() * 2).toFixed(1),
             localisation: {
-                // score: 50,
-                score: calculateRandomScore(100),
+                score: 60,
+                // score: calculateRandomScore(100),
                 // error: Math.random() >= 0.5
                 error: false
             },

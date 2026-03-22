@@ -25,6 +25,7 @@ app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
   res.status(500).json({ success: false, message: "Internal server error", error: error.message });
 });
 
+
 // Backend Server has been listened in this Respective por
 app.listen(process.env.HOST_PORT, (error:any) => {
   error ? console.log("Error while connecting server : ", error) : console.log("Backend Server Started!!", process.env.HOST_PORT);
