@@ -177,6 +177,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     closeLocalize() {
         this.isLocalize = false;
         this.isLocalisationError = true;
+        this.localisationScoreAtMannual = 0;
     }
 
     // ===================================================================================================
