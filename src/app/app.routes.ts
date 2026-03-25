@@ -25,5 +25,10 @@ export const routes: Routes = [
     path: 'logs/view/:id',
     title: 'Logs | KIOSK',
     loadComponent: async() => await import("./Sections/logs-view/logs-view.component").then(c => c.LogsViewComponent)
+  },
+  {
+    path: 'disconnected',
+    title: 'Disconnected | KIOSK',
+    loadComponent: async() => await import("./Sections/disconnected/disconnected.component").then(c => c.DisconnectedComponent)
   }
 ];

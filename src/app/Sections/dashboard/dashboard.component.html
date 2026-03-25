@@ -29,7 +29,7 @@
         </div>
     </div>
 
-    <div class="flex items-end justify-between w-full pb-3 h-max">
+    <div class="flex items-end justify-between w-full pb-3 h-max animate-slideFromDown">
         <div class="flex items-end justify-start gap-5">
             <div class="size-[130px] border-2 border-lightGray rounded-[8px] flex flex-col p-2 gap-1 relative">
                 <ranjangaon-circular-indicator [angle]="360" [size]="70" [color]="batteryIndicatorColor(liveData.battery >= 0 ? liveData.battery : 0)" [data]="liveData.battery >= 0 ? liveData.battery : 0" [rotate]="-90">
@@ -39,7 +39,7 @@
             </div>
 
             <div class="size-[130px] border-2 border-lightGray rounded-[8px] flex flex-col p-2 gap-1">
-                <ranjangaon-circular-indicator [angle]="270" [size]="70" [color]="colors.lavender" [data]="liveData.speed >=0 ? (liveData.speed/2)*100 : 0" [rotate]="135">
+                <ranjangaon-circular-indicator [angle]="270" [size]="70" [color]="colors.lavender" [data]="liveData.speed >=0 ? (liveData.speed/(configuration?.robotMaxSpeed ? configuration?.robotMaxSpeed : 2))*100 : 0" [rotate]="135">
                     <ranjangaon-icons [icon]="'speed'" [size]="16" [color]="colors.darkAsh"></ranjangaon-icons>
                 </ranjangaon-circular-indicator>
                 <p class="text-[28px] font-semibold text-black pl-2">{{liveData.speed >= 0 ? liveData.speed.toFixed(1) : '--'}}m/s</p>
@@ -50,8 +50,12 @@
             </button>
         </div>
 
-        <button *ngIf="enableStartButton" class="w-[150px] h-[65px] rounded-[6px] bg-status-green flex items-center justify-center text-white font-normal text-[20px]">
+        <button *ngIf="enableStartButton" class="w-[200px] h-[65px] rounded-[6px] bg-status-green flex items-center justify-center text-white font-normal text-[20px]">
             Start
+        </button>
+
+        <button *ngIf="!enableStartButton" class="size-[85px] rounded-[6px] bg-[#263238] flex items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
+            <ranjangaon-icons [icon]="'turn'" [size]="36" [color]="'#FFF'"></ranjangaon-icons>
         </button>
     </div>
 </div>
@@ -85,11 +89,15 @@
     <div class="flex flex-col items-start justify-start w-full h-max">
 
         <div class="w-max h-[400px] overflow-hidden mt-8 flex items-center justify-center relative">
-            <ranjangaon-circular-indicator [angle]="270" [size]="500" [color]="colors.lavender" [data]="localisationScoreAtMannual" [rotate]="135" ></ranjangaon-circular-indicator>
-            <span class="absolute flex flex-col items-center justify-center pb-10">
-                <span class="flex items-end justify-start gap-2 text-status-green"><p class="text-[64px] font-semibold p-0 m-0 leading-tight pt-5">{{localisationScoreAtMannual}}</p><p class="text-[30px] font-medium pb-3">%</p></span>
-                <p class="text-[18px] text-darkAsh -mt-2">Localization Score</p>
-            </span>
+            <ranjangaon-circular-indicator [angle]="270" [size]="500" [color]="localisationScoreColor(localisationScoreAtMannual)" [data]="localisationScoreAtMannual" [rotate]="135" >
+                <span class="flex flex-col items-center justify-center pb-12">
+                    <span [ngClass]="{'text-status-green': localisationScoreAtMannual >= 70, 'text-status-yellow': localisationScoreAtMannual >= 40 && localisationScoreAtMannual <= 69, 'text-status-red': localisationScoreAtMannual <= 39,}" class="flex items-end justify-start gap-2 transition-colors duration-300 text-darkAsh">
+                        <p class="text-[64px] font-semibold p-0 m-0 leading-tight pt-5">{{localisationScoreAtMannual}}</p>
+                        <p class="text-[30px] font-medium pb-3">%</p>
+                    </span>
+                    <p class="text-[18px] text-darkAsh -mt-2">Localization Score</p>
+                </span>
+            </ranjangaon-circular-indicator>
         </div>
 
         <!-- <div *ngIf="localisationScoreAtMannual === 0" class="w-full h-[400px] overflow-hidden mt-8 flex items-center justify-center relative animate-slideFromDown">
@@ -97,7 +105,6 @@
         </div> -->
 
         <div class="z-40 flex items-center justify-center w-full gap-5 -mt-10 h-max">
-            <p>Color code need to be discussed</p>
             <button (click)="localisationScoreAtMannual > configuration.localisation.min ? closeLocalize() :localizeRobot()" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 {{localisationScoreAtMannual > configuration.localisation.min ? 'Continue' : 'Localize Again'}}
             </button>
@@ -132,23 +139,6 @@
     </div>
 </fleet-popup>
 
-<fleet-popup *ngIf="configuration.battery.min > (liveData ? liveData.battery : 100)" [isClose]="false" [title]="'Battery Low!!'">
-    <div class="flex flex-col items-start justify-start w-full h-max">
-        <div class="flex items-center justify-center w-full h-[300px]">
-            <ranjangaon-icons [icon]="'lowBattery'" [size]="200" [color]="colors.status.red" class="-rotate-90"></ranjangaon-icons>
-        </div>
-
-        <p class="text-[20px] mt-4 leading-[45px]">Tap the button to give the charging task for the robot.</p>
-
-        <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
-            <button class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
-                Go to charge
-            </button>
-        </div>
-
-    </div>
-</fleet-popup>
-
 <fleet-popup *ngIf="isLocalisationError && (liveData ? liveData.localisation?.error : false) && (liveData ? liveData.localisiton?.score < configuration.localisation.min : false)" [isClose]="false" [title]="'Robot Delocalized!!'">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full h-[300px]">
@@ -158,7 +148,7 @@
         <p class="text-[20px] mt-4 leading-[45px]">Tap the button to localize the robot.</p>
 
         <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
-            <button (click)="isLocalisationError = false; isLocalize = true" class="w-full h-[78px]  bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button (click)="isLocalisationError = false; isLocalize = true" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 Localize
             </button>
         </div>

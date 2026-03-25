@@ -46,7 +46,26 @@ export class SseService {
             this.serverEvent.next(data);
         })
     }
+
+    this.eventSource.onerror = (event:any) => {
+        console.error('SSE Connection Error:', event);
+        this.zone.run(() => {
+            this.serverEvent.next({}); // Return empty object on error
+        });
+    }
   }
+
+
+//   startStream():any {
+//     this.eventSource.onmessage = (event:any) => {
+//         const data = JSON.parse(event.data);
+//         this.zone.run(()=> {
+//             this.serverEvent.next(data);
+//         })
+//     }
+//   }
+
+
 
   /**
    * Used to close the stream from the server

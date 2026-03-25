@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import Print from '../../Utils/print';
 import { SessionStorageService } from '../../Services/session-storage.service';
 import { ApiService } from '../../Services/api.service';
@@ -12,6 +12,7 @@ import { Router } from '@angular/router';
 import { TitleComponent } from "../../Components/title/title.component";
 import { PopupComponent } from "../../Components/popup/popup.component";
 import { SseService } from '../../Services/sse.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'ranjangaon-dashboard',
@@ -21,8 +22,9 @@ import { SseService } from '../../Services/sse.service';
   styleUrl: './dashboard.component.css'
 })
 
-export class DashboardComponent implements OnInit, AfterViewInit {
-    @ViewChild('rackContainer')rackContainer!:ElementRef<HTMLDivElement>
+export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
+    @ViewChild('rackContainer')rackContainer!:ElementRef<HTMLDivElement>;
+    private subscription!:Subscription;
     print!:Print;
     colors:any;
 
@@ -126,7 +128,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     }
 
     private monitorStatus() {
-        this.liveStream.serverEvent$.subscribe((data:any) => {
+        this.subscription = this.liveStream.serverEvent$.subscribe((data:any) => {
             this.liveData = data;
             // this.print.log('Response from Dashboard => ', this.liveData);
         })
@@ -189,6 +191,12 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         else return colors.status.red;
     }
 
+    localisationScoreColor(value:number) {
+        if(value >= 70) return colors.status.green;
+        else if(value >=40) return colors.status.yellow;
+        else return colors.status.red;
+    }
+
     // Used to check the task list is empty
     private checkForTaskAvailable(list:any) {
         const listValues = Object.values(list);
@@ -207,5 +215,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         })
 
         flag = 0;
+    }
+
+    ngOnDestroy(): void {
+        this.subscription.unsubscribe();
     }
 }
