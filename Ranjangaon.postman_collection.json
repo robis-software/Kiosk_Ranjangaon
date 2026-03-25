@@ -1,0 +1,482 @@
+{
+  "info": {
+    "_postman_id": "cc1a8c6e-f48c-4fc0-aa3c-4bd572d14972",
+    "name": "Ranjangaon",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "37101813"
+  },
+  "item": [
+    {
+      "name": "Logs",
+      "item": [
+        {
+          "name": "Create-log",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"message\" : \"{'title': 'Lorem Ipsum', 'description':'This is a sample description', 'time': '14:29', 'status': 100}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{logs_api_url}}",
+              "host": [
+                "{{logs_api_url}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get-log",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{logs_api_url}}/Mar-20-2026.log",
+              "host": [
+                "{{logs_api_url}}"
+              ],
+              "path": [
+                "Mar-20-2026.log"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get-log-V2",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"from\": 1,\r\n    \"to\": 15,\r\n    \"total\": 0,\r\n    \"time\": \"13:00\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{logs_api_url}}/v2/Mar-20-2026.log",
+              "host": [
+                "{{logs_api_url}}"
+              ],
+              "path": [
+                "v2",
+                "Mar-20-2026.log"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get-logs-list",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{logs_api_url}}",
+              "host": [
+                "{{logs_api_url}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete-all-logs",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "123456",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{logs_api_url}}",
+              "host": [
+                "{{logs_api_url}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Configuration",
+      "item": [
+        {
+          "name": "Configure",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "Robis-motherson@123",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"config\": {\r\n        \"localisation\": {\r\n            \"min\": 60,\r\n            \"max\" : 100\r\n        },\r\n        \"battery\": {\r\n            \"min\": 20,\r\n            \"max\": 90\r\n        },\r\n        \"racks\": {\r\n            \"rows\": 3,\r\n            \"columns\": 2\r\n        },\r\n        \"name\": \"Scalo-100\",\r\n        \"loadingArea\": 5, // Contains node ID where it need to get loaded\r\n        \"waitingTime\": 30, // Waiting time in seconds,\r\n        \"screenOutTime\": 60, // Screen oout time in seconds\r\n        \"waitingTimeAfterAck\": 30, // Waiting time after the acknowledgement is given for producing sound\r\n        \"robotMaxSpeed\": 1.5,\r\n        \"nodes\" : {\r\n            \"charging\" : 10,\r\n            \"pickNode\" : 1,\r\n            \"localizeNode\" : 6\r\n        }\r\n    }\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{configuration_api_url}}",
+              "host": [
+                "{{configuration_api_url}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "View-config",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{configuration_api_url}}",
+              "host": [
+                "{{configuration_api_url}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Test",
+      "item": [
+        {
+          "name": "Server-Side-Event",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{test_api}}/sse",
+              "host": [
+                "{{test_api}}"
+              ],
+              "path": [
+                "sse"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Navitrol-to-frontend",
+      "item": [
+        {
+          "name": "Live-Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{navitrol_api}}/live-status",
+              "host": [
+                "{{navitrol_api}}"
+              ],
+              "path": [
+                "live-status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Localisation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{navitrol_api}}/localisation",
+              "host": [
+                "{{navitrol_api}}"
+              ],
+              "path": [
+                "localisation"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Backend-to-navitrol",
+      "item": [
+        {
+          "name": "Localisation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{navitrol_dummy_api}}/localisation",
+              "host": [
+                "{{navitrol_dummy_api}}"
+              ],
+              "path": [
+                "localisation"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Battery",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{navitrol_dummy_api}}/battery",
+              "host": [
+                "{{navitrol_dummy_api}}"
+              ],
+              "path": [
+                "battery"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Speed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{navitrol_dummy_api}}/speed",
+              "host": [
+                "{{navitrol_dummy_api}}"
+              ],
+              "path": [
+                "speed"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Current-Node",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{navitrol_dummy_api}}/currentNode",
+              "host": [
+                "{{navitrol_dummy_api}}"
+              ],
+              "path": [
+                "currentNode"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Location_List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{navitrol_dummy_api}}/locations",
+              "host": [
+                "{{navitrol_dummy_api}}"
+              ],
+              "path": [
+                "locations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Localize-Robot",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{navitrol_dummy_api}}/localize",
+              "host": [
+                "{{navitrol_dummy_api}}"
+              ],
+              "path": [
+                "localize"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Tasks-List",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"ids\": [2,3,4,5,6,7]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{navitrol_dummy_api}}/generateTasks",
+              "host": [
+                "{{navitrol_dummy_api}}"
+              ],
+              "path": [
+                "generateTasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Complete-Tasks",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"enable\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{navitrol_dummy_api}}/unload",
+              "host": [
+                "{{navitrol_dummy_api}}"
+              ],
+              "path": [
+                "unload"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "logs_api_url",
+      "value": ""
+    },
+    {
+      "key": "configuration_api_url",
+      "value": ""
+    },
+    {
+      "key": "test_api",
+      "value": ""
+    },
+    {
+      "key": "navitrol_api",
+      "value": ""
+    },
+    {
+      "key": "navitrol_dummy_api",
+      "value": ""
+    }
+  ]
+}
