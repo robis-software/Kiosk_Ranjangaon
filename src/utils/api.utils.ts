@@ -26,7 +26,7 @@ class ApiUtils {
 
         }
         catch (error:any) {
-            this.print.error('GET API',error);
+            this.print.error(`GET API ${endpoint}`,error);
             return error
         }
 
@@ -38,8 +38,8 @@ class ApiUtils {
             const response = await axios.post(`${this.baseURL}/${endpoint}`, data, { headers });
             return response;
         } catch (error: any) {
-            this.print.error('POST API', error);
-            return error;
+            this.print.error(`POST API ${endpoint}`,error);
+            return error
         }
     };
 
@@ -49,8 +49,8 @@ class ApiUtils {
             const response = await axios.put(`${this.baseURL}/${endpoint}`, data, { headers });
             return response;
         } catch (error: any) {
-            this.print.error('PUT API', error);
-            return error;
+            this.print.error(`PUT API ${endpoint}`,error);
+            return error
         }
     };
 

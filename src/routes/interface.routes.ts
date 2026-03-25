@@ -1,10 +1,10 @@
 import express, {Router} from "express";
-import LiveStatusController from "../controller/liveStatus.controller";
+import NavitrolClientController from "../controller/navitrolClient.controller";
 
 const interfaceRouter: Router = express.Router();
-const liveStatusController = new LiveStatusController();
+const navitrolClientController = new NavitrolClientController();
 
-interfaceRouter.get('/live-status', liveStatusController.serverSideEvent)
+interfaceRouter.get('/live-status', navitrolClientController.monitorLiveDataV1)
 
 
 export default interfaceRouter
