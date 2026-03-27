@@ -58,7 +58,8 @@ class NavitrolClientController {
 
     }
 
-    // Written by Vigneswara
+    // Written by Vigneswara - Currently Used
+    // Live Status API
     monitorLiveDataV1 = (req:Request, res: Response, next:NextFunction) => {
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
@@ -80,15 +81,71 @@ class NavitrolClientController {
         }
     }
 
+    // Get Locations
+    getLocationSymbolicIds = async(req:Request, res:Response, next:NextFunction) => {
+        try {
+            const response = await this.fetchData(process.env.LOCATION_LIST);
+            res.status(200).json({message: 'List of locations for the robot', data:response});
+        } 
+        catch (error) {
+            this.print.log('API Call Failed: getLocationSymbolicIds() in NavitrolClientController');
+            res.status(400).json({message: 'Error Happened while getting the locations list from the robot', error});
+        }
+    }
 
+    // Send Tasks to the Robot
+    sendTaskToRobot = async(req:Request, res:Response, next:NextFunction) => {
+        try {
+            const response = this.postData(process.env.SEND_TASKS, req.body);
+            res.status(200).json({message: 'Task List has been send to the robot', data: response})
+        } 
+        catch (error) {
+            this.print.log('API Call Failed: sendTaskToRobot() in NavitrolClientController');
+            res.status(400).json({message: 'Error Happened while sending the task list to the robot', error});
+        }
+    }
+
+    // Send Task Feedback, to say that the task's completion status
+    sendTaskFeedback = async (req:Request, res:Response, next:NextFunction) => {
+        try {
+            const response = await this.postData(process.env.COMPLETE_TASK, {});
+            res.status(200).json({message: 'Task List has been send to the robot', data: response})
+        } 
+        catch (error) {
+            this.print.log('API Call Failed: sendTaskFeedback() in NavitrolClientController');
+            res.status(400).json({message: 'Error Happened while sending the task list to the robot', error});
+        }
+    }
+
+    // Initialise Robot
+    initializeRobot = async(req:Request, res:Response, next:NextFunction) => {
+        try {
+            const response = await this.postData(process.env.LOCALIZE, req.body);
+            res.status(200).json({message: 'Initialize API has been sent to robot', data: response.data})
+        } 
+        catch (error) {
+            this.print.log('API Call Failed: initializeRobot() in NavitrolClientController');
+            res.status(400).json({message: 'Error Happened while initializin robot', error});
+        }
+    }
 
     // ===================================================================================================
     // Helper Functions - Privated
     // ===================================================================================================
 
-    private async fetchData(endPoint:any):Promise<string> {
+    private async fetchData(endPoint:any):Promise<any> {
         try {
            const response = await this.api.get(endPoint);
+           return response.data
+        }
+        catch (error:any) {
+            return error
+        }
+    }
+
+    private async postData(endPoint:any, body:any):Promise<any> {
+        try {
+           const response = await this.api.post(endPoint, body);
            return response.data
         }
         catch (error:any) {
@@ -106,13 +163,13 @@ class NavitrolClientController {
                 this.fetchData(process.env.CURRENT_NODE)
             ]);
 
-            const live = !!(localisation && (+battery >= 0) && (+speed >= 0) && currentNode) ;
+            const live = !!(localisation && (+battery >= 0) && (speed !== null) && currentNode) ;
 
             const response = {
                 live,
                 localisation, 
                 battery, 
-                speed, 
+                speed: speed < 0  ? (-speed) : speed, 
                 currentNode
             };
         
@@ -121,7 +178,7 @@ class NavitrolClientController {
         catch (error) {
             this.print.log('API Error from Navitrol', error);
             console.clear();
-            return JSON.stringify({});
+            return JSON.stringify({live: false});
         }
     }
 
