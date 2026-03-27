@@ -6,10 +6,7 @@ import { colors } from '../../Utils/colors';
 import { CommonModule } from '@angular/common';
 import { IconsComponent } from "../../Components/icons/icons.component";
 import { CircularIndicatorComponent } from "../../Components/circular-indicator/circular-indicator.component";
-import { LiveStatusService } from '../../Services/live-status.service';
-import { RackSelectComponent } from "../rack-select/rack-select.component";
 import { Router } from '@angular/router';
-import { TitleComponent } from "../../Components/title/title.component";
 import { PopupComponent } from "../../Components/popup/popup.component";
 import { SseService } from '../../Services/sse.service';
 import { Subscription } from 'rxjs';
@@ -17,7 +14,7 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'ranjangaon-dashboard',
   standalone: true,
-  imports: [CommonModule, IconsComponent, CircularIndicatorComponent, RackSelectComponent, TitleComponent, PopupComponent],
+  imports: [CommonModule, IconsComponent, CircularIndicatorComponent, PopupComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -51,6 +48,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     // Localisation
     isLocalize:boolean = false;
     localisationScoreAtMannual:number = 0;
+    localisationStatus:any;
 
     // Localisation - from live data
     isLocalisationError:boolean = true;
@@ -83,7 +81,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.racksArray.forEach((rack:any)=> {
             if(this.taskList[rack.id]) {
                 rack.isLoaded = this.taskList[rack.id].dropLocation !== undefined || this.taskList[rack.id].dropLocation !== null;
-                rack.dropLocation = this.taskList[rack.id].dropLocation;
+                rack.dropLocation = this.taskList[rack.id];
                 this.enableStartButton = true
             }
         });
@@ -155,14 +153,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     localizeRobot() {
         this.isLocalize = true;
         this.localisationScoreAtMannual = 0;
-        this.api.get('test/localize', {}).subscribe({
+        this.api.post   ('navitrol/initialize', {id: this.configuration.nodes.localizeNode}).subscribe({
             next: (response:any) => {
                 this.localisationScoreAtMannual = 0;
                 this.print.log('Fetched Localisation Score', this.localisationScoreAtMannual);
-
+                this.print.log('Initialize API Response', response);
+                this.localisationStatus = response.data.status;
                 setTimeout(()=> {
                     const incrementer = setInterval(()=>{
-                        if(this.localisationScoreAtMannual >= response.data) {
+                        if(this.localisationScoreAtMannual >= this.liveData.localisation.score) {
                             clearInterval(incrementer);
                             return
                         }
@@ -180,6 +179,35 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.isLocalize = false;
         this.isLocalisationError = true;
         this.localisationScoreAtMannual = 0;
+    }
+
+    sendTask() {
+        const taskIds = Object.values(this.taskList);
+        const filteredTaskList = [];
+        for(let id in taskIds) {
+            if(taskIds[id] !== null && taskIds[id] !== undefined) {
+                filteredTaskList.push(+taskIds[id]);
+            }
+        }
+
+        // Check whether the filtered task list is not Zero
+        if(filteredTaskList.length !== 0) {
+            this.print.log('Filtered Task List => SendTask API', filteredTaskList)
+            this.sendTaskList(filteredTaskList)
+        }
+    }
+
+    private sendTaskList(list:number[]) {
+        this.print.log('Recieved Task List :=>', list);
+
+        this.api.post('navitrol/create-task', {ids: list}).subscribe({
+            next: (res:any) => {
+                this.print.log("Create Task API Response", res)
+            },
+            error: (error:any) => {
+                this.print.error('Create Task API Error', error)
+            }
+        })
     }
 
     // ===================================================================================================
