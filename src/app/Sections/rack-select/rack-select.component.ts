@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { TitleComponent } from "../../Components/title/title.component";
 import { IconsComponent } from "../../Components/icons/icons.component";
 import Print from '../../Utils/print';
@@ -22,9 +22,12 @@ export class RackSelectComponent implements OnInit {
 
     taskList:any = {};
 
+    configuration:any;
+
     constructor(private readonly api:ApiService, private readonly activeRoute:ActivatedRoute, private readonly router:Router, private readonly ss:SessionStorageService) {
         this.colors = colors;
         this.print = new Print();
+        this.configuration = this.ss.getItem('_config');
     }
 
     ngOnInit(): void {
@@ -36,10 +39,12 @@ export class RackSelectComponent implements OnInit {
 
     private fetchLocations() {
         this.taskList = this.ss.getItem('_taskList');
-        this.api.get('test/location', {}).subscribe({
+        this.api.get('navitrol/location-list', {}).subscribe({
             next: (response:any) => {
-                this.print.log(response);
-                this.locations = response.data.filter((data:any) => data.type === 'unload');
+                this.print.log('Location-list response => ',response);
+                const notUnloadLocation = Object.values(this.configuration.nodes);
+                this.print.log({response, notUnloadLocation})
+                this.locations = response.data.filter((data:any) => !notUnloadLocation.includes(data));
             },
             error: (error:any) => {
                 this.print.error('Error Happened while fetching locations in ract-select => ',error)

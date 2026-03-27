@@ -19,7 +19,8 @@ module.exports = {
         },
         racks: '#DEDEDE',
         rackSelect: '#EDEDED',
-        keys: '#F4F4F4'
+        keys: '#F4F4F4',
+        dialogIcon: '#8E8E8E'
       },
       animation: {
         screenSaverIn: 'screenSaverIn 1s cubic-bezier(1, 0.01,.17,.52) forwards',

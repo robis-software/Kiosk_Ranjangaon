@@ -8,5 +8,7 @@ export const colors = {
         yellow: '#FFBE31',
         red: '#FF0000'
     },
-    racks: '#DEDEDE'
+    racks: '#DEDEDE',
+    dialogIcon: '#8E8E8E',
+    keys: '#F4F4F4',
 }
