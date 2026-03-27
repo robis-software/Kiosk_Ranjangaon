@@ -50,7 +50,7 @@
             </button> -->
         </div>
 
-        <button *ngIf="enableStartButton" class="size-[111px] rounded-[8px] bg-status-green flex items-center justify-center text-white font-normal text-[20px]">
+        <button *ngIf="enableStartButton" (click)="sendTask()" class="w-[200px] h-[65px] rounded-[6px] bg-status-green flex items-center justify-center text-white font-normal text-[20px]">
             Start
         </button>
 
@@ -85,7 +85,7 @@
     </div>
 </fleet-popup>
 
-<fleet-popup *ngIf="isLocalize" [isClose]="localisationScoreAtMannual > configuration.localisation.min" [title]="'Localise Robot!'" (view)="isLocalize = $event; localisationScoreAtMannual = 0; isLocalisationError = true">
+<fleet-popup *ngIf="isLocalize" [isClose]="(localisationScoreAtMannual > configuration.localisation.min) && localisationStatus !== 207" [title]="'Localise Robot!'" (view)="isLocalize = $event; localisationScoreAtMannual = 0; isLocalisationError = true">
     <div class="flex flex-col items-start justify-start w-full h-max">
 
         <div class="w-max h-[400px] overflow-hidden mt-8 flex items-center justify-center relative">
@@ -105,7 +105,7 @@
         </div> -->
 
         <div class="z-40 flex items-center justify-center w-full gap-5 -mt-10 h-max">
-            <button (click)="localisationScoreAtMannual > configuration.localisation.min ? closeLocalize() :localizeRobot()" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button (click)="((localisationScoreAtMannual > configuration.localisation.min) && localisationStatus !== 207) ? closeLocalize() :localizeRobot()" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 {{localisationScoreAtMannual > configuration.localisation.min ? 'Continue' : 'Localize Again'}}
             </button>
         </div>
@@ -139,7 +139,7 @@
     </div>
 </fleet-popup>
 
-<fleet-popup *ngIf="isLocalisationError && (liveData ? liveData.localisation?.error : false) && (liveData ? liveData.localisiton?.score < configuration.localisation.min : false)" [isClose]="false" [title]="'Robot Delocalized!!'">
+<fleet-popup *ngIf="isLocalisationError && (liveData ? liveData.localisation?.error?.code === 207 : false)" [isClose]="false" [title]="'Robot Delocalized!!'">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full h-[300px]">
             <ranjangaon-icons [icon]="'localisationScore'" [size]="200" [color]="colors.dialogIcon"></ranjangaon-icons>

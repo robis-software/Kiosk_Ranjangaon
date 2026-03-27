@@ -24,7 +24,7 @@ export class LiveStatusService {
             },
             error: (error:any) => {
                 this.print.log('Error Happened while getting data from the status API', error);
-                this.liveStatus.next({});
+                this.liveStatus.next({live: false});
                 this.initiate();
             }
         })
@@ -46,6 +46,7 @@ export class LiveStatusService {
                 this.liveStatus.next(response.data);
             },
             error: (error:any) => {
+                this.liveStatus.next({});
                 this.print.log('Error Happened while getting data from the status API', error);
             }
         })
