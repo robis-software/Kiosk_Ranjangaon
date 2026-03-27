@@ -80,6 +80,17 @@ class NavitrolClientController {
         }
     }
 
+    getLocations = async(req:Request, res:Response, next:NextFunction) => {
+        try {
+            const locationList = await this.fetchData(process.env.LOCATION_LIST);
+            res.status(200).json({message: 'Location List that are available', data: locationList});
+        }
+        catch (error:any) {
+            this.print.log('Navitrol Controller => getLocations()',error);
+            res.status(400).json({message: error});
+        }
+    }
+
 
 
     // ===================================================================================================
