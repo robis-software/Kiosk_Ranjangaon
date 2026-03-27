@@ -34,7 +34,7 @@ class ApiUtils {
     }
 
     // POST Method
-    post = async (endpoint: string, data: any, headers?: any): Promise<any> => {
+    post =  async (endpoint: string, data: any, headers?: any): Promise<any> => {
         try {
             const response = await axios.post(`${this.baseURL}/${endpoint}`, data, { 
                 headers : {
@@ -42,6 +42,9 @@ class ApiUtils {
                     ...headers
                 }
             });
+
+            this.print.log(response)
+
             return response;
         } catch (error: any) {
             this.print.error(`POST API ${endpoint}`,error);

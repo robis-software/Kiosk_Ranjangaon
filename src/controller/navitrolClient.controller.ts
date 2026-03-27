@@ -129,6 +129,19 @@ class NavitrolClientController {
         }
     }
 
+    // Initialise Robot
+    inPlaceRotation = async(req:Request, res:Response, next:NextFunction) => {
+        try {
+            // No Body
+            const response = await this.postData(process.env.ROTATE_180, {}); 
+            res.status(200).json({message: 'Pivot API has been sent to robot', data: response.data})
+        } 
+        catch (error) {
+            this.print.log('API Call Failed: inPlaceRotation() in NavitrolClientController');
+            res.status(400).json({message: 'Error Happened while initializin robot', error});
+        }
+    }
+
     // ===================================================================================================
     // Helper Functions - Privated
     // ===================================================================================================
