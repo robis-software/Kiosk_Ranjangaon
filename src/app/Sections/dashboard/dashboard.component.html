@@ -2,7 +2,7 @@
     <div class="w-full h-[900px] mt-20 flex items-center justify-start flex-col">
         <div #rackContainer class="grid gap-4 w-[500px] h-[650px]">
             @for (rack of racksArray; track $index) {
-                <div (click)="sendRackID(rack.id, rack.isLoaded)" *ngIf="rack" [ngClass]="{'bg-racks': !rack.isLoaded, 'bg-status-green': rack.isLoaded}" class="flex items-center justify-center w-full h-full rounded-[12px]">
+                <div (click)="sendRackID(rack)" *ngIf="rack" [ngClass]="{'bg-racks': !rack.isLoaded, 'bg-status-green': rack.isLoaded}" class="flex items-center justify-center w-full h-full rounded-[12px] duration-100">
                     <ranjangaon-icons *ngIf="!rack.isLoaded" [icon]="'rack'" [size]="80" [color]="'#AFAFAF'"></ranjangaon-icons>
 
                     <div *ngIf="rack.isLoaded" class="flex flex-col items-center justify-center gap-2 w-max h-max">
@@ -50,17 +50,17 @@
             </button> -->
         </div>
 
-        <button *ngIf="enableStartButton" (click)="sendTask()" class="w-[200px] h-[65px] rounded-[6px] bg-status-green flex items-center justify-center text-white font-normal text-[20px]">
+        <button *ngIf="enableStartButton && !isTaskListSent" (click)="sendTask()" class="w-[200px] h-[65px] rounded-[6px] bg-status-green flex items-center justify-center text-white font-normal text-[20px]">
             Start
         </button>
 
-        <button *ngIf="!enableStartButton" class="size-[111px] rounded-[8px] bg-lavender flex items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
-            <ranjangaon-icons [icon]="'turn'" [size]="42" class="active:animate-spin" [color]="'#FFF'"></ranjangaon-icons>
+        <button *ngIf="!enableStartButton" (click)="rotateInplace()" class="size-[85px] rounded-[6px] bg-[#263238] flex items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
+            <ranjangaon-icons [icon]="'turn'" [size]="36" [color]="'#FFF'"></ranjangaon-icons>
         </button>
     </div>
 </div>
 
-<fleet-popup *ngIf="isDeleteAction" [title]="'Action Needed!!'" (view)="isDeleteAction = $event">
+<fleet-popup *ngIf="isDeleteAction && !isTaskListSent" [title]="'Action Needed!!'" (view)="isDeleteAction = $event">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full py-12 h-max">
             <ranjangaon-icons [icon]="'delete'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
@@ -112,7 +112,7 @@
     </div>
 </fleet-popup>
 
-<fleet-popup *ngIf="isAcknowledgement" [isClose]="false" [title]="'Attention Needed!!'">
+<fleet-popup *ngIf="isAcknowledgement && isTaskListSent" [isClose]="false" [title]="'Attention Needed!!'">
     <div class="flex flex-col items-start justify-start w-full h-max">
 
         <div class="w-full h-[350px] mt-4 flex flex-col items-center justify-center relative">
@@ -155,5 +155,7 @@
 
     </div>
 </fleet-popup>
+
+
 
 
