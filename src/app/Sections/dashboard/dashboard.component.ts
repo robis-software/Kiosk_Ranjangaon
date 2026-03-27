@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild, ElementRef, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import Print from '../../Utils/print';
 import { SessionStorageService } from '../../Services/session-storage.service';
 import { ApiService } from '../../Services/api.service';
@@ -36,6 +36,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Tasks and Realted variales
     taskList:any = {};
+    isTaskListSent:boolean = false;
 
     openForRack:number = 0;
 
@@ -43,7 +44,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Delete Action
     isDeleteAction:boolean = false;
-    deleteActionRackID:number | null = 0;
+    deleteActionRack:any;
 
     // Localisation
     isLocalize:boolean = false;
@@ -57,14 +58,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     isAcknowledgement:boolean = false;
 
 
-    constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly router:Router, private readonly liveStream:SseService) {}
+    constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly router:Router, private readonly liveStream:SseService, private readonly cdf:ChangeDetectorRef) {}
 
     ngOnInit(): void {
         this.colors = colors;
         this.print = new Print();
         this.monitorStatus();
         this.configuration = this.ss.getItem('_config');
-        this.ss.removeItem("_authenication")
+        this.ss.removeItem("_authenication");
 
         const tasks = this.ss.getItem('_taskList')
 
@@ -75,16 +76,18 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             this.taskList = tasks
         }
 
-        this.generateRacks(this.configuration.racks.rows * this.configuration.racks.columns);
+        // this.generateRacks(this.configuration.racks.rows * this.configuration.racks.columns);
         this.enableStartButton = false;
 
-        this.racksArray.forEach((rack:any)=> {
-            if(this.taskList[rack.id]) {
-                rack.isLoaded = this.taskList[rack.id].dropLocation !== undefined || this.taskList[rack.id].dropLocation !== null;
-                rack.dropLocation = this.taskList[rack.id];
-                this.enableStartButton = true
-            }
-        });
+        this.renderRacks();
+
+        // this.racksArray.forEach((rack:any)=> {
+        //     if(this.taskList[rack.id]) {
+        //         rack.isLoaded = this.taskList[rack.id].dropLocation !== undefined || this.taskList[rack.id].dropLocation !== null;
+        //         rack.dropLocation = this.taskList[rack.id];
+        //         this.enableStartButton = true
+        //     }
+        // });
 
         this.print.log(this.racksArray);
     }
@@ -101,6 +104,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     generateRacks(size:number) {
+        this.racksArray = [];
         for(let i=0; i< size; i++) {
             const rack = {
                 isLoaded: false,
@@ -111,17 +115,53 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     }
 
-    sendRackID(id:any, isOpenRack:boolean) {
-        if(isOpenRack) {
+    renderRacks(from?:string) {
+
+        this.print.log("++++++++++++++++++++++++++++++++++++", from, '++++++++++++++++++++++++++++++++++++')
+
+        const tasks = this.ss.getItem('_taskList')
+
+        if(tasks === undefined || tasks === null) {
+            this.taskList = {}
+        }
+        else {
+            this.taskList = tasks
+        }
+
+        this.print.log('Tasks Lists =>', this.taskList)
+
+        const taskLocations:any = Object.keys(this.taskList);
+        const taskRacks:any = Object.values(this.taskList);
+
+        this.print.log('Render Racks', {taskLocations, taskRacks})
+
+        this.generateRacks(this.configuration.racks.rows * this.configuration.racks.columns);
+
+        taskLocations.forEach((location:number, index:number)=> {
+            taskRacks[index].forEach((racks:number) => {
+                const currentRack = this.racksArray[racks-1];
+                currentRack.isLoaded = true;
+                currentRack.dropLocation = location;
+                this.racksArray[racks-1] = currentRack;
+                this.enableStartButton = true
+            })
+        })
+
+        this.cdf.detectChanges();
+
+        this.print.log('Updated Racks', this.racksArray)
+    }
+
+    sendRackID(rack:any) {
+        if(rack.isLoaded) {
             this.print.log('This rack has been filed already!!');
             this.isDeleteAction = true;
-            this.deleteActionRackID = id;
+            this.deleteActionRack = rack;
             return;
         }
-        this.openForRack = id;
         this.ss.setItem('_taskList', this.taskList)
         this.router.navigate(['/rack-select'], {
-            queryParams: {id}
+            queryParams: {id: rack.id}
         })
     }
 
@@ -133,20 +173,35 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     deleteAction() {
-        this.taskList[this.deleteActionRackID as number] = null;
-        this.racksArray.forEach((rack:any) => {
-            if(rack.id === this.deleteActionRackID) {
-                rack.isLoaded = false;
-                rack.dropLocation = '';
-            }
-        })
+        // this.taskList[this.deleteActionRackID as number] = null;
+        // this.racksArray.forEach((rack:any) => {
+        //     if(rack.id === this.deleteActionRackID) {
+        //         rack.isLoaded = false;
+        //         rack.dropLocation = '';
+        //     }
+        // })
 
-        this.print.log('Updated racksArray', this.racksArray)
-        this.print.log('Updated TaskList', this.taskList)
+        // this.print.log('Updated racksArray', this.racksArray)
+        // this.print.log('Updated TaskList', this.taskList)
 
+        // this.ss.setItem('_taskList', this.taskList);
+        // this.isDeleteAction = false;
+        // this.deleteActionRackID = null;
+
+        // ================================================================================================
+
+        // Actual format
+        // {
+        //    <location_number> : <rack_ids>[]
+        // }
+
+        this.taskList[this.deleteActionRack.dropLocation] = this.taskList[this.deleteActionRack.dropLocation].filter((rack:number)=> rack !== this.deleteActionRack.id);
+
+        this.print.log('After Deleted Rack', this.taskList);
         this.ss.setItem('_taskList', this.taskList);
         this.isDeleteAction = false;
-        this.deleteActionRackID = null;
+        this.deleteActionRack = {};
+        this.renderRacks('delete');
         this.checkForTaskAvailable(this.taskList);
     }
 
@@ -183,12 +238,18 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     sendTask() {
         const taskIds = Object.values(this.taskList);
-        const filteredTaskList = [];
-        for(let id in taskIds) {
-            if(taskIds[id] !== null && taskIds[id] !== undefined) {
-                filteredTaskList.push(+taskIds[id]);
+        const filteredTaskList:number[] = [];
+        // for(let id in taskIds) {
+        //     if(taskIds[id] !== null && taskIds[id] !== undefined) {
+        //         filteredTaskList.push(+taskIds[id]);
+        //     }
+        // }
+
+        taskIds.forEach((id) => {
+            if(id !== null && id !== undefined) {
+                filteredTaskList.push(+id)
             }
-        }
+        })
 
         // Check whether the filtered task list is not Zero
         if(filteredTaskList.length !== 0) {
@@ -202,10 +263,23 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.api.post('navitrol/create-task', {ids: list}).subscribe({
             next: (res:any) => {
-                this.print.log("Create Task API Response", res)
+                this.print.log("Create Task API Response", res);
+                this.isTaskListSent = true;
             },
             error: (error:any) => {
-                this.print.error('Create Task API Error', error)
+                this.print.error('Create Task API Error', error);
+                this.isTaskListSent = false;
+            }
+        })
+    }
+
+    rotateInplace() {
+        this.api.post('navitrol/rotate-180', {}).subscribe({
+            next: (res:any) => {
+                this.print.log("Rotate 180deg API Response", res);
+            },
+            error: (error:any) => {
+                this.print.error('Create Task API Error', error);
             }
         })
     }
@@ -227,22 +301,34 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Used to check the task list is empty
     private checkForTaskAvailable(list:any) {
-        const listValues = Object.values(list);
-        const lenOfList = listValues.length;
+        // const listValues = Object.values(list);
+        // const lenOfList = listValues.length;
 
-        // Flag
-        let flag = 0
+        // // Flag
+        // let flag = 0
 
-        listValues.forEach((listData:any)=> {
-            if(listData === null || listData === undefined || listData === '') {
+        // listValues.forEach((listData:any)=> {
+        //     if(listData === null || listData === undefined || listData === '') {
+        //         flag+=1;
+        //         if(flag === lenOfList) {
+        //             this.enableStartButton = false;
+        //         }
+        //     }
+        // })
+
+        // flag = 0;
+
+        const racks = Object.values(list);
+        let flag = 0;
+
+        racks.forEach((rack:any) => {
+            if(rack.length !== 0) {
                 flag+=1;
-                if(flag === lenOfList) {
-                    this.enableStartButton = false;
-                }
             }
         })
 
-        flag = 0;
+        this.enableStartButton = (flag===0);
+
     }
 
     ngOnDestroy(): void {

@@ -50,8 +50,7 @@ export class AppComponent implements OnInit {
     private monitorStatus() {
         this.liveStream.serverEvent$.subscribe((data:any) => {
             this.liveData = data;
-            this.print.log('Live-status=> \n', data);
-
+            // this.print.log('Live-status=> \n', data);
             const isEmpty = !data || Object.keys(data).length === 0;
             const isNotLive = data?.live === false;
             // if(data === null || data === undefined || JSON.stringify(data) === '{}' || data.live === false) {
