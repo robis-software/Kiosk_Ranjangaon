@@ -56,8 +56,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnChanges, OnD
 
     // Acknowledgement
     isAcknowledgement:boolean = false;
+    isAcknowledgementSkip:boolean = false;
 
-    // Timer
+    // Acknowledgement Timer
+    ackTimer:any;
     timer:number = 0
 
 
@@ -78,35 +80,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnChanges, OnD
         else {
             this.taskList = tasks
         }
-
-        // this.generateRacks(this.configuration.racks.rows * this.configuration.racks.columns);
         this.enableStartButton = false;
-
         this.renderRacks();
-
-        // this.racksArray.forEach((rack:any)=> {
-        //     if(this.taskList[rack.id]) {
-        //         rack.isLoaded = this.taskList[rack.id].dropLocation !== undefined || this.taskList[rack.id].dropLocation !== null;
-        //         rack.dropLocation = this.taskList[rack.id];
-        //         this.enableStartButton = true
-        //     }
-        // });
-
         this.print.log(this.racksArray);
-        this.timer = this.configuration.waitingTime;
-        this.isAcknowledgement = true
-        setTimeout(()=>{
-            const ackTimer = setInterval(()=>{
-                if(this.timer <= 0) {
-                    clearInterval(ackTimer);
-                    this.isAcknowledgement = false;
-                    this.print.log('API Call for complete task on the particular location')
-                }
-                else {
-                    this.timer-=1
-                }
-            }, 1000)
-        },2000)
+        this.startAcknowledgementTimer();
     }
 
     ngAfterViewInit(): void {
@@ -301,6 +278,48 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnChanges, OnD
         })
     }
 
+    startAcknowledgementTimer() {
+        this.timer = this.configuration.waitingTime;
+        this.isAcknowledgement = true;
+        this.isAcknowledgementSkip = false;
+        setTimeout(()=>{
+            this.ackTimer = setInterval(()=>{
+                if(this.timer <= 0) {
+                    clearInterval(this.ackTimer);
+                    this.isAcknowledgement = false;
+                    this.isAcknowledgementSkip = false;
+                    this.print.log('API Call for complete task on the particular location')
+                }
+                else {
+                    this.timer-=1
+                }
+            }, 1000)
+        },100)
+    }
+
+    clearAcknowledgementTimer() {
+        this.isAcknowledgement = false;
+        this.isAcknowledgementSkip = false;
+        clearInterval(this.ackTimer);
+    }
+
+    skipAckowledgement() {
+        this.isAcknowledgementSkip = true;
+        clearInterval(this.ackTimer);
+    }
+
+    completeTaskAPI() {
+        this.print.log('Current task Completed');
+    }
+
+    private chargingTaskAPI() {
+        this.print.log('Charging Task has sent')
+    }
+
+    private pickLocationTaskAPI() {
+        this.print.log('Pick up Location Task has sent')
+    }
+
     // ===================================================================================================
     // Helper Function
     // ===================================================================================================
@@ -359,6 +378,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnChanges, OnD
 
     }
 
+    // ===================================================================================================
+    // Angular Events
+    // ===================================================================================================
+
     ngOnChanges(changes: SimpleChanges): void {
         // We trigger this changes whne there is an change in the variables for example
 
@@ -369,7 +392,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnChanges, OnD
         // After starting a task a flag need to be set as true, so that we know that there are some task that need to be completed
         // After completion of all the tasks, that flag will be set to false, also with an task to reach the pickup location
     }
-
 
     ngOnDestroy(): void {
         this.subscription.unsubscribe();

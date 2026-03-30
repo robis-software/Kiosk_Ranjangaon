@@ -55,8 +55,7 @@ export class AppComponent implements OnInit {
             const isNotLive = data?.live === false;
             // if(data === null || data === undefined || JSON.stringify(data) === '{}' || data.live === false) {
             if((isEmpty || isNotLive) && this.router.url !== '/disconnected') {
-                console.log(data)
-                this.router.navigateByUrl('/disconnected');
+                // this.router.navigateByUrl('/disconnected');
             }
         });
     }

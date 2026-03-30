@@ -45,9 +45,7 @@
                 <p class="text-[28px] font-semibold text-black pl-2">{{liveData.speed >= 0 ? liveData.speed.toFixed(1) : '--'}}m/s</p>
             </div>
 
-            <!-- <button (click)="localizeRobot()" class="w-[150px] h-[65px] rounded-[6px] bg-lavender flex items-center justify-center text-white font-normal text-[20px]">
-                Localise
-            </button> -->
+            <!-- <button (click)="localizeRobot()" class="w-[150px] h-[65px] rounded-[6px] bg-lavender flex items-center justify-center text-white font-normal text-[20px]">Localise</button> -->
         </div>
 
         <button *ngIf="enableStartButton && !isTaskListSent" (click)="sendTask()" class="w-[200px] h-[65px] rounded-[6px] bg-status-green flex items-center justify-center text-white font-normal text-[20px]">
@@ -60,6 +58,7 @@
     </div>
 </div>
 
+<!-- Delete Popup -->
 <fleet-popup *ngIf="isDeleteAction && !isTaskListSent" [title]="'Action Needed!!'" (view)="isDeleteAction = $event">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full py-12 h-max">
@@ -85,6 +84,7 @@
     </div>
 </fleet-popup>
 
+<!-- Localisation Popup -->
 <fleet-popup *ngIf="isLocalize" [isClose]="(localisationScoreAtMannual > configuration.localisation.min) && localisationStatus !== 207" [title]="'Localise Robot!'" (view)="isLocalize = $event; localisationScoreAtMannual = 0; isLocalisationError = true">
     <div class="flex flex-col items-start justify-start w-full h-max">
 
@@ -112,11 +112,12 @@
     </div>
 </fleet-popup>
 
+<!-- Acknwoledgement Popup -->
 <fleet-popup *ngIf="isAcknowledgement && !isTaskListSent" [isClose]="false" [title]="'Attention Needed!!'">
-    <div class="flex flex-col items-start justify-start w-full h-max">
+    <div *ngIf="!isAcknowledgementSkip" class="flex flex-col items-start justify-start w-full translate-x-full h-max animate-slideIn">
 
         <div class="w-full h-[350px] mt-4 flex flex-col items-center justify-center relative">
-            <p class="text-[96px] font-semibold text-black w-[300px] text-center">00:{{timer < 10 ? '0'+timer : timer}}</p>
+            <p class="text-[96px] font-semibold text-black w-[295px]">00:{{timer < 10 ? '0'+timer : timer}}</p>
             <p class="text-[40px] text-primary font-medium">Sec</p>
         </div>
 
@@ -128,17 +129,41 @@
         </span>
 
         <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
-            <button (click)="isAcknowledgement = false" class="w-full h-[78px] border-2 border-primary text-primary flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button (click)="skipAckowledgement()" class="w-full h-[78px] border-2 border-primary text-primary flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 Skip
             </button>
 
-            <button class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button (click)="clearAcknowledgementTimer()" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 Acknowledge
+            </button>
+        </div>
+    </div>
+
+    <div *ngIf="isAcknowledgementSkip" class="flex flex-col items-start justify-start w-full h-max animate-slideIn">
+        <div class="flex items-center justify-center w-full py-12 h-max">
+            <ranjangaon-icons [icon]="'skipTask'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
+        </div>
+
+        <p class="text-[20px] mt-4 leading-[45px]">Are you sure to skip this task ?</p>
+
+        <span class="w-full mt-6">
+            <p class="text-[22px] font-semibold text-primary">Note</p>
+            <p class="text-[20px] mt-1 leading-[45px]">if you press button, the task will be considered as completed and robot will move to next location for executing the task.</p>
+        </span>
+
+        <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
+            <button (click)="startAcknowledgementTimer()" class="w-full h-[78px] border-2 border-primary text-primary flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+                Cancel
+            </button>
+
+            <button (click)="clearAcknowledgementTimer(); completeTaskAPI();" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+                Skip Task
             </button>
         </div>
     </div>
 </fleet-popup>
 
+<!-- Localisation Error -->
 <fleet-popup *ngIf="isLocalisationError && (liveData ? liveData.localisation?.error?.code === 207 : false)" [isClose]="false" [title]="'Robot Delocalized!!'">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full h-[300px]">
@@ -156,6 +181,30 @@
     </div>
 </fleet-popup>
 
+<!-- Unload Popup -->
+<fleet-popup *ngIf="isDeleteAction && isTaskListSent" [title]="'Action Needed!!'" (view)="isDeleteAction = $event">
+    <div class="flex flex-col items-start justify-start w-full h-max">
+        <div class="flex items-center justify-center w-full py-12 h-max">
+            <ranjangaon-icons [icon]="'delete'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
+        </div>
 
+        <p class="text-[20px] mt-4 leading-[45px]">Are you sure to delete this action ?</p>
+
+        <span class="w-full mt-6">
+            <p class="text-[22px] font-semibold text-primary">Note</p>
+            <p class="text-[20px] mt-1 leading-[45px]">This is a permanent action and irreversible, if there is any mistake happens, delete this action and create a new action.</p>
+        </span>
+
+        <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
+            <button (click)="isDeleteAction = false" class="w-full h-[78px] border-2 border-primary text-primary flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+                Cancel
+            </button>
+
+            <button (click)="deleteAction()" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+                Delete
+            </button>
+        </div>
+    </div>
+</fleet-popup>
 
 

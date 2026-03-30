@@ -25,11 +25,11 @@ module.exports = {
       animation: {
         screenSaverIn: 'screenSaverIn 1s cubic-bezier(1, 0.01,.17,.52) forwards',
         screenSaverOut: 'screenSaverOut 1s cubic-bezier(1, 0.01,.17,.52) forwards',
-        // screenSaverIn: 'screenSaverIn 0.4s ease-in-out forwards',
-        // screenSaverOut: 'screenSaverOut 0.4s ease-in-out forwards',
         blink: 'blink 1s ease-in-out infinite',
         slideFromDown: 'popupEntry 0.5s cubic-bezier(0.4, 0, 0.6, 1) forwards',
-        vibrate: 'vibrate 0.2s ease-in-out infinite'
+        vibrate: 'vibrate 0.2s ease-in-out infinite',
+        slideIn: 'slideIn 0.4s ease-in-out forwards',
+        slideOut: 'slideOut 0.4s ease-in-out forwards'
       },
       keyframes: {
         screenSaverIn: {
@@ -49,6 +49,10 @@ module.exports = {
             '25%': { transform: 'translateX(3px)' },
             '50%': { transform: 'translateX(0px)' },
             '75%': { transform: 'translateX(-3px)' },
+        },
+        slideIn: {
+            'from': { transform: 'translateX(10%)', opacity: 0},
+            'to': { transform: 'translateX(0%)', opacity: 1},
         }
       }
     },
