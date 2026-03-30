@@ -59,7 +59,7 @@
 </div>
 
 <!-- Delete Popup -->
-<fleet-popup *ngIf="isDeleteAction && !isTaskListSent" [title]="'Action Needed!!'" (view)="isDeleteAction = $event">
+<fleet-popup *ngIf="isDeleteAction" [title]="'Action Needed!!'" (view)="isDeleteAction = $event">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full py-12 h-max">
             <ranjangaon-icons [icon]="'delete'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
@@ -113,7 +113,7 @@
 </fleet-popup>
 
 <!-- Acknwoledgement Popup -->
-<fleet-popup *ngIf="isAcknowledgement && !isTaskListSent" [isClose]="false" [title]="'Attention Needed!!'">
+<fleet-popup *ngIf="isAcknowledgement" [isClose]="false" [title]="'Attention Needed!!'">
     <div *ngIf="!isAcknowledgementSkip" class="flex flex-col items-start justify-start w-full translate-x-full h-max animate-slideIn">
 
         <div class="w-full h-[350px] mt-4 flex flex-col items-center justify-center relative">
@@ -164,7 +164,7 @@
 </fleet-popup>
 
 <!-- Localisation Error -->
-<fleet-popup *ngIf="isLocalisationError && (liveData ? liveData.localisation?.error?.code === 207 : false)" [isClose]="false" [title]="'Robot Delocalized!!'">
+<fleet-popup *ngIf="isLocalisationError" [isClose]="false" [title]="'Robot Delocalized!!'">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full h-[300px]">
             <ranjangaon-icons [icon]="'localisationScore'" [size]="200" [color]="colors.dialogIcon"></ranjangaon-icons>
@@ -182,10 +182,10 @@
 </fleet-popup>
 
 <!-- Unload Popup -->
-<fleet-popup *ngIf="isDeleteAction && isTaskListSent" [title]="'Action Needed!!'" (view)="isDeleteAction = $event">
+<fleet-popup *ngIf="isUnloadAction" [title]="'Action Needed!!'" (view)="isUnloadAction = $event">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full py-12 h-max">
-            <ranjangaon-icons [icon]="'delete'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
+            <ranjangaon-icons [icon]="'unload'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
         </div>
 
         <p class="text-[20px] mt-4 leading-[45px]">Are you sure to delete this action ?</p>
@@ -196,11 +196,11 @@
         </span>
 
         <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
-            <button (click)="isDeleteAction = false" class="w-full h-[78px] border-2 border-primary text-primary flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button (click)="isUnloadAction = false" class="w-full h-[78px] border-2 border-primary text-primary flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 Cancel
             </button>
 
-            <button (click)="deleteAction()" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button (click)="completeTaskAPI()" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 Delete
             </button>
         </div>

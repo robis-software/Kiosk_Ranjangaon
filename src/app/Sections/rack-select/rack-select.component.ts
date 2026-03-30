@@ -52,7 +52,6 @@ export class RackSelectComponent implements OnInit {
     }
 
     addTask(id:number) {
-
         // Step 1: Check whether there is Location entered
         if(this.taskList[id] === null || this.taskList[id]?.length === 0 || this.taskList[id] === undefined) {
             const racks = [];

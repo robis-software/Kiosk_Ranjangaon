@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit, ViewChild, ElementRef, OnDestroy, ChangeDetectorRef, OnChanges, SimpleChanges } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild, ElementRef, OnDestroy, ChangeDetectorRef} from '@angular/core';
 import Print from '../../Utils/print';
 import { SessionStorageService } from '../../Services/session-storage.service';
 import { ApiService } from '../../Services/api.service';
@@ -19,17 +19,13 @@ import { Subscription } from 'rxjs';
   styleUrl: './dashboard.component.css'
 })
 
-export class DashboardComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy {
+export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     @ViewChild('rackContainer')rackContainer!:ElementRef<HTMLDivElement>;
     private subscription!:Subscription;
     print!:Print;
     colors:any;
 
     configuration:any;
-    grid:any = {
-        rows: 0,
-        columns: 0
-    }
 
     racksArray:any[] = []
     liveData:any;
@@ -44,7 +40,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnChanges, OnD
 
     // Delete Action
     isDeleteAction:boolean = false;
-    deleteActionRack:any;
+    selectedRack:any;
 
     // Localisation
     isLocalize:boolean = false;
@@ -52,7 +48,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnChanges, OnD
     localisationStatus:any;
 
     // Localisation - from live data
-    isLocalisationError:boolean = true;
+    isLocalisationError:boolean = false;
 
     // Acknowledgement
     isAcknowledgement:boolean = false;
@@ -61,6 +57,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnChanges, OnD
     // Acknowledgement Timer
     ackTimer:any;
     timer:number = 0
+
+    // Unload Action
+    isUnloadAction:boolean = false;
 
 
     constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly router:Router, private readonly liveStream:SseService, private readonly cdf:ChangeDetectorRef) {}
@@ -83,7 +82,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnChanges, OnD
         this.enableStartButton = false;
         this.renderRacks();
         this.print.log(this.racksArray);
-        this.startAcknowledgementTimer();
     }
 
     ngAfterViewInit(): void {
@@ -149,8 +147,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnChanges, OnD
     sendRackID(rack:any) {
         if(rack.isLoaded) {
             this.print.log('This rack has been filed already!!');
-            this.isDeleteAction = true;
-            this.deleteActionRack = rack;
+            this.isDeleteAction = true && !this.isTaskListSent;
+            this.isUnloadAction = true && this.isTaskListSent;
+            this.selectedRack = rack;
             return;
         }
         this.ss.setItem('_taskList', this.taskList)
@@ -162,6 +161,18 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnChanges, OnD
     private monitorStatus() {
         this.subscription = this.liveStream.serverEvent$.subscribe((data:any) => {
             this.liveData = data;
+
+            this.print.log({
+                ...data.currentNode
+            })
+
+            if(data?.currentNode?.status === 13 && this.isTaskListSent) {
+                this.startAcknowledgementTimer();
+            }
+            else if(data?.localisation?.error?.code === 207) {
+                this.isLocalisationError = true;
+            }
+            // Check and assign the pick point automatically if the list is empty and check the current node position for it, so that it is easier to check the robot is in pick location
             // this.print.log('Response from Dashboard => ', this.liveData);
         })
     }
@@ -189,12 +200,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnChanges, OnD
         //    <location_number> : <rack_ids>[]
         // }
 
-        this.taskList[this.deleteActionRack.dropLocation] = this.taskList[this.deleteActionRack.dropLocation].filter((rack:number)=> rack !== this.deleteActionRack.id);
+        this.taskList[this.selectedRack.dropLocation] = this.taskList[this.selectedRack.dropLocation].filter((rack:number)=> rack !== this.selectedRack.id);
 
         this.print.log('After Deleted Rack', this.taskList);
         this.ss.setItem('_taskList', this.taskList);
         this.isDeleteAction = false;
-        this.deleteActionRack = {};
+        this.selectedRack = {};
         this.renderRacks('delete');
         this.checkForTaskAvailable(this.taskList);
     }
@@ -226,7 +237,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnChanges, OnD
 
     closeLocalize() {
         this.isLocalize = false;
-        this.isLocalisationError = true;
+        this.isLocalisationError = false;
         this.localisationScoreAtMannual = 0;
     }
 
@@ -371,27 +382,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnChanges, OnD
                 flag+=1;
             }
         })
-
-        this.enableStartButton = (flag===0);
-
+        this.enableStartButton = (flag !== 0);
         return flag === 0
-
     }
 
     // ===================================================================================================
     // Angular Events
     // ===================================================================================================
-
-    ngOnChanges(changes: SimpleChanges): void {
-        // We trigger this changes whne there is an change in the variables for example
-
-        //If the Value of the current node status is 13(Completed), then a dialog box will be open to get the feedback from user and if there is no feedback given the task will be marked as completed
-        // There will be timer of 30s will be running after the dialog opens, if there is no feedback from the particular time, it will be marked as completed
-        // then the robot will move to next task.
-
-        // After starting a task a flag need to be set as true, so that we know that there are some task that need to be completed
-        // After completion of all the tasks, that flag will be set to false, also with an task to reach the pickup location
-    }
 
     ngOnDestroy(): void {
         this.subscription.unsubscribe();

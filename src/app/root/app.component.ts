@@ -32,6 +32,8 @@ export class AppComponent implements OnInit {
 
   timeInMintes = environment.screenTimeOut;
 
+  isBatteryLow:boolean = false
+
   constructor(private readonly api:ApiService, private readonly ss:SessionStorageService, private readonly router:Router, private readonly liveStream:SseService) {}
 
     ngOnInit(): void {
@@ -55,7 +57,12 @@ export class AppComponent implements OnInit {
             const isNotLive = data?.live === false;
             // if(data === null || data === undefined || JSON.stringify(data) === '{}' || data.live === false) {
             if((isEmpty || isNotLive) && this.router.url !== '/disconnected') {
-                // this.router.navigateByUrl('/disconnected');
+                this.router.navigateByUrl('/disconnected');
+            }
+
+            if(this.configuration?.battery.min > this.liveData?.battery) {
+                this.isBatteryLow = true;
+                this.chargingTaskAPI();
             }
         });
     }
@@ -106,5 +113,9 @@ export class AppComponent implements OnInit {
                 this.print.error('Error happened while fetching data from the Configuration', error);
             }
         });
+    }
+
+    chargingTaskAPI() {
+        this.print.log('Charging Station Task is sent!!');
     }
 }
