@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit, ViewChild, ElementRef, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild, ElementRef, OnDestroy, ChangeDetectorRef, OnChanges, SimpleChanges } from '@angular/core';
 import Print from '../../Utils/print';
 import { SessionStorageService } from '../../Services/session-storage.service';
 import { ApiService } from '../../Services/api.service';
@@ -19,7 +19,7 @@ import { Subscription } from 'rxjs';
   styleUrl: './dashboard.component.css'
 })
 
-export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
+export class DashboardComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy {
     @ViewChild('rackContainer')rackContainer!:ElementRef<HTMLDivElement>;
     private subscription!:Subscription;
     print!:Print;
@@ -57,6 +57,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     // Acknowledgement
     isAcknowledgement:boolean = false;
 
+    // Timer
+    timer:number = 0
+
 
     constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly router:Router, private readonly liveStream:SseService, private readonly cdf:ChangeDetectorRef) {}
 
@@ -90,6 +93,20 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         // });
 
         this.print.log(this.racksArray);
+        this.timer = this.configuration.waitingTime;
+        this.isAcknowledgement = true
+        setTimeout(()=>{
+            const ackTimer = setInterval(()=>{
+                if(this.timer <= 0) {
+                    clearInterval(ackTimer);
+                    this.isAcknowledgement = false;
+                    this.print.log('API Call for complete task on the particular location')
+                }
+                else {
+                    this.timer-=1
+                }
+            }, 1000)
+        },2000)
     }
 
     ngAfterViewInit(): void {
@@ -300,6 +317,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // Used to check the task list is empty
+    /**
+     *  Used to Check the task list is empty
+     * @param list : Task list
+     * @returns boolean
+     *
+     * true -> if there is no data
+     *
+     * false -> if there is data
+     */
     private checkForTaskAvailable(list:any) {
         // const listValues = Object.values(list);
         // const lenOfList = listValues.length;
@@ -329,7 +355,21 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.enableStartButton = (flag===0);
 
+        return flag === 0
+
     }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        // We trigger this changes whne there is an change in the variables for example
+
+        //If the Value of the current node status is 13(Completed), then a dialog box will be open to get the feedback from user and if there is no feedback given the task will be marked as completed
+        // There will be timer of 30s will be running after the dialog opens, if there is no feedback from the particular time, it will be marked as completed
+        // then the robot will move to next task.
+
+        // After starting a task a flag need to be set as true, so that we know that there are some task that need to be completed
+        // After completion of all the tasks, that flag will be set to false, also with an task to reach the pickup location
+    }
+
 
     ngOnDestroy(): void {
         this.subscription.unsubscribe();

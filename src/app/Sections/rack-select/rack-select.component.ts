@@ -24,8 +24,6 @@ export class RackSelectComponent implements OnInit {
 
     taskList:any = {};
 
-    configuration:any;
-
     constructor(private readonly api:ApiService, private readonly activeRoute:ActivatedRoute, private readonly router:Router, private readonly ss:SessionStorageService) {
         this.colors = colors;
         this.print = new Print();
