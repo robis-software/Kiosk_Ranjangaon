@@ -138,7 +138,19 @@ class NavitrolClientController {
         } 
         catch (error) {
             this.print.log('API Call Failed: inPlaceRotation() in NavitrolClientController');
-            res.status(400).json({message: 'Error Happened while initializin robot', error});
+            res.status(400).json({message: 'Error Happened while Rotating the robot', error});
+        }
+    }
+
+    // Set Pick Point
+    setPickLocation = async(req:Request, res:Response, next:NextFunction) => {
+        try {
+            const response = await this.postData(process.env.PICK_POINT, req.body); 
+            res.status(200).json({message: 'Pick Point location has set in the robot', data: response.data})
+        } 
+        catch (error) {
+            this.print.log('API Call Failed: setPickLocation() in NavitrolClientController');
+            res.status(400).json({message: 'Error Happened while set pick point location is fixed in robot', error});
         }
     }
 
@@ -166,7 +178,6 @@ class NavitrolClientController {
         }
     }
 
-
     private async liveResponse():Promise<string> {
         try {
             const [localisation, battery, speed, currentNode] = await Promise.all([
@@ -179,6 +190,7 @@ class NavitrolClientController {
             const live = !!(localisation && (+battery >= 0) && (speed !== null) && currentNode) ;
 
             const response = {
+                date:new Date().toLocaleTimeString().split(' ')[0],
                 live,
                 localisation, 
                 battery, 
