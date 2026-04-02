@@ -39,14 +39,27 @@ export class RackSelectComponent implements OnInit {
 
     private fetchLocations() {
         this.taskList = this.ss.getItem('_taskList');
-        const locationToBeIgnored = Object.values(this.configuration.nodes);
+        const locationToBeIgnored = [this.configuration.nodes.pickNode, this.configuration.nodes.chargingNode]
         this.api.get('navitrol/location-list', {}).subscribe({
             next: (response:any) => {
                 this.print.log(response);
                 this.locations = response.data.filter((data:any) => !locationToBeIgnored.includes(data)).sort();
+
+                this.setPickPoint();
             },
             error: (error:any) => {
                 this.print.error('Error Happened while fetching locations in ract-select => ',error)
+            }
+        })
+    }
+
+    private setPickPoint() {
+        this.api.post('navitrol/set-pick-location', {id: this.configuration.nodes.pickNode}).subscribe({
+            next: (response:any) => {
+                this.print.log('Pick Location Set to the robot!!', response);
+            },
+            error: (error:any) => {
+                this.print.error('Error happened while sending data to the robot', error);
             }
         })
     }
