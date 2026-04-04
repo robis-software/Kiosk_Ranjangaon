@@ -43,7 +43,7 @@ class ApiUtils {
                 }
             });
 
-            this.print.log(response)
+            // this.print.log(response)
 
             return response;
         } catch (error: any) {

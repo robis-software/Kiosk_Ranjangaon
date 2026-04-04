@@ -6,6 +6,7 @@ const navitrolClientController = new NavitrolClientController();
 
 interfaceRouter.get('/live-status', navitrolClientController.monitorLiveDataV1);
 interfaceRouter.get('/location-list', navitrolClientController.getLocationSymbolicIds);
+interfaceRouter.get('/charging-status', navitrolClientController.getChargingStatus);
 
 interfaceRouter.post('/complete-task', navitrolClientController.sendTaskFeedback);
 interfaceRouter.post('/create-task', navitrolClientController.sendTaskToRobot);

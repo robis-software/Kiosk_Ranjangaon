@@ -154,6 +154,17 @@ class NavitrolClientController {
         }
     }
 
+    getChargingStatus = async(req:Request, res:Response, next:NextFunction) => {
+        try {
+            const response = await this.fetchData(process.env.CHARGING_STATUS);
+            res.status(200).json({message: 'Charging status of the robot has been fetched', data:response});
+        } 
+        catch (error) {
+            this.print.log('API Call Failed: getChargingStatus() in NavitrolClientController');
+            res.status(400).json({message: 'Error Happened while getting charging status of the robot', error});
+        }
+    }
+
     // ===================================================================================================
     // Helper Functions - Privated
     // ===================================================================================================
