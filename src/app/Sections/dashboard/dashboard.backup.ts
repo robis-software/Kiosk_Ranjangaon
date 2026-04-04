@@ -11,25 +11,6 @@ import { PopupComponent } from "../../Components/popup/popup.component";
 import { SseService } from '../../Services/sse.service';
 import { Subscription } from 'rxjs';
 import { LogsService } from '../../Services/logs.service';
-import TasksCore from '../../core/tasks.core';
-import RobotStateCore from '../../core/robotState.core';
-
-enum RobotState {
-    IDLE,
-    TASK_CREATED,
-    TASK_READY,
-    TASK_SENT,
-    MOVE_NEXT,
-    ARRIVED_PICK,
-    ARRIVED_DROP,
-    ARRIVED_CHARGE,
-    WAITING_ACK,
-    DROP_ACK,
-    CHARGING_REQUESTED,
-    CHARGER_CONNECTED,
-    CHARGING,
-    CHARGING_COMPLETE_ACK
-}
 
 @Component({
   selector: 'ranjangaon-dashboard',
@@ -45,14 +26,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     print!:Print;
     colors:any;
 
-    // State Mission Variables;
-    state:RobotState = RobotState.IDLE;
-
-    private readonly pickAPI!:TasksCore;
-    private readonly chargeAPI!:TasksCore;
-    private readonly taskAPI!:TasksCore;
-
     configuration:any;
+
     racksArray:any[] = []
     liveData:any;
 
@@ -60,6 +35,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     taskList:any = {};
     isTaskListSent:boolean = false;
     skipTaskList:any = {};
+
+    openForRack:number = 0;
 
     enableStartButton:boolean = false;
 
@@ -96,11 +73,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     isUnloadAction:boolean = false;
 
 
-    constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly router:Router, private readonly liveStream:SseService, private readonly cdf:ChangeDetectorRef, private readonly logs:LogsService) {
-        this.chargeAPI = new TasksCore(this.api, this.logs, 'charge');
-        this.pickAPI = new TasksCore(this.api, this.logs, 'pick');
-        this.taskAPI = new TasksCore(this.api, this.logs, 'task');
-    }
+    constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly router:Router, private readonly liveStream:SseService, private readonly cdf:ChangeDetectorRef, private readonly logs:LogsService) {}
 
     ngOnInit(): void {
         this.colors = colors;
@@ -146,7 +119,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     }
 
-    renderRacks() {
+    renderRacks(from?:string) {
+
+        this.print.log("++++++++++++++++++++++++++++++++++++", from, '++++++++++++++++++++++++++++++++++++')
+
         const tasks = this.ss.getItem('_taskList')
 
         if(tasks === undefined || tasks === null) {
@@ -198,12 +174,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     private monitorStatus() {
-        this.subscription = this.liveStream.serverEvent$.subscribe(async(data:any) => {
+        this.subscription = this.liveStream.serverEvent$.subscribe((data:any) => {
             this.liveData = data;
 
-            this.print.log({...data.currentNode})
+            this.print.log({
+                ...data.currentNode
+            })
 
-            if(data?.battery >= this.configuration.battery.max && this.isChargeCompleteAcknowledgement) {
+            if(this.liveData?.battery >= this.configuration.battery.max && this.isChargeCompleteAcknowledgement) {
                 this.print.log('Robot is charged Enough and sent to the pick location');
                 this.isHomeReached = false;
                 this.isChargingStationReached = false;
@@ -214,26 +192,22 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
             // If the robot reaches the charging location and battery is less that the battery min value, open the charging mode screen, and work on that Dialog
 
-            if(data?.battery <= 35 && this.checkForTaskAvailable(this.taskList) && !this.isChargingTaskSent && !this.isTaskListSent) {
-                this.isChargingTaskSent = await this.chargeAPI.createTask([this.configuration?.nodes?.chargingNode]);
+            if(this.liveData?.battery <= 35 && this.checkForTaskAvailable(this.taskList) && !this.isChargingTaskSent && !this.isTaskListSent) {
+                this.chargingTaskAPI();
                 return;
             }
 
-            if(data?.currentNode?.current === this.configuration?.nodes?.chargingNode && this.liveData?.currentNode?.status === 13 && !this.isChargingStationReached) {
-
-                this.isChargingStationReached = await this.chargeAPI.completeTask(this.liveData?.currentNode?.current)
-                if (this.isChargingStationReached) {
-                    this.chargeMonitorTimer = setInterval(() => { this.isChargingAPI() }, 1000);
-                }
-                else {
-                    this.chargeMonitorTimer = null;
-                }
+            if(this.liveData?.currentNode?.current === this.configuration.nodes.chargingNode && this.liveData?.currentNode?.status === 13 && !this.isChargingStationReached) {
+                this.completeTaskAPI();
+                this.isChargingStationReached = true; //It is reached, so that the status of this is changed
+                this.chargeMonitorTimer = setInterval(()=>{this.isChargingAPI()},1000)
                 return
             }
 
             if(data?.currentNode?.current === this.configuration?.nodes?.pickNode && data?.currentNode?.status === 13 && !this.isHomeReached) {
-                this.isHomeReached = await this.pickAPI.completeTask(data?.currentNode?.current);
+                this.completeTaskAPI();
                 this.setPickPoint();
+                this.isHomeReached = true;
                 return
             }
 
@@ -242,8 +216,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 return
             }
 
-            if(!this.isLocalisationError && data?.localisation?.error?.code === 207) {
+            else if(!this.isLocalisationError && data?.localisation?.error?.code === 207) {
                 this.isLocalisationError = true;
+                return
             }
             // Check and assign the pick point automatically if the list is empty and check the current node position for it, so that it is easier to check the robot is in pick location
             // this.print.log('Response from Dashboard => ', this.liveData);
@@ -348,7 +323,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.taskList[this.selectedRack.dropLocation] = this.taskList[this.selectedRack.dropLocation].filter((rack:number)=> rack !== this.selectedRack.id);
         this.ss.setItem('_taskList', this.taskList)
         this.print.log('Updated Task List After Unloading', this.taskList);
-        this.renderRacks();
+        this.renderRacks('delete');
         this.isUnloadAction = false;
         // this.deleteAction()
         if(this.taskList[this.selectedRack.dropLocation].length === 0) {
@@ -609,155 +584,5 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     ngOnDestroy(): void {
         this.subscription.unsubscribe();
-    }
-
-    private isReachedDropLocation(data:any): boolean {
-        const list = [this.configuration?.nodes?.pickNode, this.configuration?.nodes?.chargingNode]
-        return !list.includes(data?.currentNode?.current) && data?.currentNode?.status === 13
-    }
-
-    private isReachedPickLocation(data:any): boolean {
-        return data?.currentNode?.current === this.configuration?.nodes?.pickNode && data.currentNode?.status === 13
-    }
-
-    private isReachedChargeLocation(data:any): boolean {
-        return data?.currentNode?.current === this.configuration?.nodes?.chargingNode && data.currentNode?.status === 13
-    }
-
-    private isBatteryNeedsCharge(data:any): boolean {
-        return data?.battery <= this.configuration?.battery?.min && this.checkForTaskAvailable(this.taskList)
-    }
-
-    private isAllUnloaded(locationId:number):boolean {
-        this.taskList[this.selectedRack.dropLocation] = this.taskList[this.selectedRack.dropLocation].filter((rack:number)=> rack !== this.selectedRack.id);
-        this.ss.setItem('_taskList', this.taskList);
-        if(this.taskList[this.selectedRack.dropLocation].length === 0) {
-            this.renderRacks();
-            return true
-        }
-        return false
-    }
-
-    // Use this in to bring the acknowledgement button in charging screen and press the button to change state to RobotState.CHARGING_COMPLETE_ACK
-    isBatteryFullyCharged(data:any): boolean {
-        return data?.battery >= this.configuration?.battery?.max
-    }
-
-    private setState(newState:RobotState) {
-        this.print.log(`State Changed from ${this.state} -> ${newState}`);
-        this.state = newState;
-    }
-
-    private isChargerConnected():Promise<boolean> {
-        return new Promise((resolve, reject)=> {
-            this.api.get('navitrol/charging-status', {}).subscribe({
-                next: (response:any) => {
-                    resolve(response.data === 1);
-                },
-                error: (error:any) => {
-                    this.print.error('Error Happened while fetching locations in ract-select => ',error);
-                    resolve(false);
-                }
-            })
-        })
-    }
-
-
-    private async stateMission(data:any) {
-        switch(this.state) {
-            case RobotState.IDLE:
-                if(this.isBatteryNeedsCharge(data)) {
-                    this.setState(RobotState.CHARGING_REQUESTED);
-                    break;
-                }
-
-                if(this.checkForTaskAvailable(this.taskList)) {
-                    this.setState(RobotState.IDLE);
-                }
-                else {
-                    // Set Pick Location to the Robot
-                    this.setState(RobotState.TASK_CREATED);
-                    // If state = RobotState.TASK_CREATED, then the start button need to be on the screen and that fixes the RobotState.TASK_READY
-                }
-                break;
-
-            case RobotState.TASK_READY:
-                if(await this.taskAPI.createTask(this.taskList)) {
-                    this.setState(RobotState.TASK_SENT);
-                    break;
-                }
-                this.print.log('Task List not sent to robot!!')
-                this.setState(RobotState.TASK_CREATED);
-                break;
-
-            case RobotState.CHARGING_REQUESTED:
-                if(await this.chargeAPI.createTask([this.configuration?.nodes?.chargingNode])) {
-                    this.setState(RobotState.TASK_SENT);
-                }
-                else {
-                    this.setState(RobotState.IDLE);
-                }
-                break;
-
-            case RobotState.TASK_SENT:
-                if(this.isReachedDropLocation(data)) {
-                    this.setState(RobotState.ARRIVED_DROP);
-                }
-                else if(this.isReachedPickLocation(data)) {
-                    this.setState(RobotState.ARRIVED_PICK);
-                }
-                else if(this.isReachedChargeLocation(data)) {
-                    this.setState(RobotState.ARRIVED_CHARGE);
-                }
-                break;
-
-            case RobotState.ARRIVED_PICK:
-                if(await this.pickAPI.completeTask(this.configuration?.nodes?.pickNode)) {
-                    // Set Pick refernce point for upcoming tasks
-                    this.setState(RobotState.IDLE);
-                }
-                else {
-                    this.setState(RobotState.TASK_SENT);
-                }
-                break;
-
-            case RobotState.ARRIVED_DROP:
-                this.setState(RobotState.WAITING_ACK);
-                this.startAcknowledgementTimer();
-                break
-
-            // This will be given in the Ack button of the drop location reached acknowledgement Screen
-            case RobotState.DROP_ACK:
-                if(this.isAllUnloaded(data?.currentNode?.current)) {
-                    this.setState(RobotState.MOVE_NEXT);
-                }
-                break;
-
-            case RobotState.MOVE_NEXT:
-                if(await this.taskAPI.completeTask(data?.currentNode?.current)) {
-                    this.setState(RobotState.TASK_SENT)
-                }
-                break;
-
-            case RobotState.ARRIVED_CHARGE:
-                if(await this.chargeAPI.completeTask(this.configuration?.nodes?.chargingNode)) {
-                    this.setState(RobotState.CHARGER_CONNECTED);
-                }
-                break;
-
-            case RobotState.CHARGER_CONNECTED:
-                if(await this.isChargerConnected()) {
-                    this.setState(RobotState.CHARGING);
-                    // If the battery is fully charged an button will be shown in the UI to change state to RobotState.CHARGING_COMPLETE_ACK
-                }
-                break;
-
-            case RobotState.CHARGING_COMPLETE_ACK:
-                if(await this.pickAPI.createTask([this.configuration?.nodes?.pickNode])) {
-                    this.setState(RobotState.TASK_SENT);
-                }
-                break;
-        }
-
     }
 }
