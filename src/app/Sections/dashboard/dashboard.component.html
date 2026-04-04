@@ -2,7 +2,7 @@
     <div class="w-full h-[900px] mt-20 flex items-center justify-start flex-col">
         <div #rackContainer class="grid gap-4 w-[500px] h-[650px]">
             @for (rack of racksArray; track $index) {
-                <button (click)="sendRackID(rack)" *ngIf="rack" [ngClass]="{'bg-racks': !rack.isLoaded || isTaskListSent, 'bg-status-green': (rack.isLoaded && !isTaskListSent) || (liveData?.currentNode?.current === +rack.dropLocation && liveData?.currentNode?.status === 13 && isAcknowledgementGiven), 'animate-pulse': (liveData?.currentNode.current === +rack.dropLocation) && rack.isLoaded && isAcknowledgementGiven}" class="flex items-center justify-center w-full h-full rounded-[12px] duration-100">
+                <button (click)="sendRackID(rack)" *ngIf="rack" [ngClass]="{'bg-racks': !rack.isLoaded || isTaskListSent, 'bg-status-green': (rack.isLoaded && !isTaskListSent) || (liveData?.currentNode?.current === +rack.dropLocation && liveData?.currentNode?.status === 13 && isAcknowledgementGiven), 'animate-pulse': (liveData?.currentNode?.current === +rack.dropLocation) && rack.isLoaded && isAcknowledgementGiven}" class="flex items-center justify-center w-full h-full rounded-[12px] duration-100">
                     <ranjangaon-icons *ngIf="!rack.isLoaded" [icon]="'rack'" [size]="80" [color]="'#AFAFAF'"></ranjangaon-icons>
 
                     <!-- <div *ngIf="(rack.isLoaded && !isTaskListSent) || (liveData?.currentNode?.current === +rack.dropLocation && liveData?.currentNode?.status === 13 && isAcknowledgementGiven)" class="flex flex-col items-center justify-center gap-2 w-max h-max"> -->
@@ -10,7 +10,7 @@
                         <div class="size-[73px] bg-white flex items-center justify-center pb-3 rounded-[8px]">
                             <ranjangaon-icons class="mt-3" [icon]="'location'" [size]="48" [color]="colors.primary"></ranjangaon-icons>
                         </div>
-                        <p class="text-[40px] font-medium text-white">LOC - {{rack.dropLocation < 10 ? '0'+rack.dropLocation : rack.dropLocation}}</p>
+                        <p [ngClass]="{'text-white': (liveData?.currentNode?.current === +rack.dropLocation && isTaskListSent && isAcknowledgementGiven) || (rack.isLoaded && !isTaskListSent)}" class="text-[40px] font-medium">LOC - {{rack.dropLocation < 10 ? '0'+rack.dropLocation : rack.dropLocation}}</p>
                     </div>
 
                 </button>
@@ -86,7 +86,7 @@
 </fleet-popup>
 
 <!-- Localisation Popup -->
-<fleet-popup *ngIf="isLocalize" [isClose]="(localisationScoreAtMannual > configuration.localisation.min) && localisationStatus !== 207" [title]="'Localise Robot!'" (view)="isLocalize = $event; localisationScoreAtMannual = 0; isLocalisationError = true">
+<fleet-popup *ngIf="isLocalize" [isClose]="(localisationScoreAtMannual > configuration.localisation.min) && localisationStatus !== 207" [title]="'Localise Robot!'" (view)="isLocalize = $event; localisationScoreAtMannual = 0; isLocalisationError = false">
     <div class="flex flex-col items-start justify-start w-full h-max">
 
         <div class="w-max h-[400px] overflow-hidden mt-8 flex items-center justify-center relative">
@@ -203,10 +203,53 @@
             </button>
 
             <button (click)="unloadAllRacks()" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
-                Delete
+                Unload
             </button>
         </div>
     </div>
 </fleet-popup>
 
+<!-- Block UI until Reaches home -->
+<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.pickNode && liveData?.currentNode?.status !== 13" [title]="'Returning!!'" [isClose]="false">
+    <div class="flex flex-col items-start justify-start w-full h-max">
+        <div class="flex items-center justify-center w-full py-12 h-max">
+            <ranjangaon-icons [icon]="'home-location'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
+        </div>
 
+        <p class="text-[20px] mt-4 leading-[45px]">Robot is going to it's home location.</p>
+
+        <span class="w-full mt-6">
+            <p class="text-[22px] font-semibold text-primary">Note</p>
+            <p class="text-[20px] mt-1 leading-[45px]">It won't accept any task, until reaching the home position</p>
+        </span>
+    </div>
+</fleet-popup>
+
+<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode && isChargingStationReached" [title]="'Charging Mode!!'" [isClose]="false">
+    <div class="w-full h-full">
+        <div class="w-max h-[400px] overflow-hidden mt-8 flex items-center justify-center relative">
+            <ranjangaon-circular-indicator [angle]="360" [size]="500" [color]="batteryIndicatorColor(liveData?.battery)" [data]="+liveData?.battery || 30" [rotate]="-90" >
+                <span class="flex flex-col items-center justify-center">
+                    @if(isCharging){
+                        <span class="animate-slideFromDown">
+                            <ranjangaon-icons class="animate-pulse" [icon]="'charging'" [size]="120" [color]="colors.status.yellow"></ranjangaon-icons>
+                        </span>}
+                    @else {<ranjangaon-icons class="animate-slideFromDown" [icon]="'battery'" [size]="120" [color]="colors.dialogIcon"></ranjangaon-icons>}
+                </span>
+            </ranjangaon-circular-indicator>
+        </div>
+
+        <div *ngIf="isCharging && liveData?.batter >= configuration?.battery.max" class="mt-4 animate-slideIn">
+            <p class="text-[20px] leading-[45px]">Tap Acknowledge to begin unloading the materials at this location.</p>
+
+            <span class="w-full mt-6">
+                <p class="text-[22px] font-semibold text-primary">Note</p>
+                <p class="text-[20px] mt-1 leading-[45px]">If no acknowledgment is received within the given time, the system will skip unloading and proceed to the next destination automatically.</p>
+            </span>
+
+            <button class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px] mt-16">
+                Acknowledge
+            </button>
+        </div>
+    </div>
+</fleet-popup>

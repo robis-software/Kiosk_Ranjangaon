@@ -10,6 +10,7 @@ import { Router } from '@angular/router';
 import { PopupComponent } from "../../Components/popup/popup.component";
 import { SseService } from '../../Services/sse.service';
 import { Subscription } from 'rxjs';
+import { LogsService } from '../../Services/logs.service';
 
 @Component({
   selector: 'ranjangaon-dashboard',
@@ -33,13 +34,19 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     // Tasks and Realted variales
     taskList:any = {};
     isTaskListSent:boolean = false;
+    skipTaskList:any = {};
 
     openForRack:number = 0;
 
     enableStartButton:boolean = false;
 
     isHomeReached:boolean = false;
+
     isChargingTaskSent:boolean = false;
+    isChargingStationReached:boolean = true;
+    isCharging:boolean = false;
+    chargeMonitorTimer:any;
+    isChargeCompleteAcknowledgement:boolean = false;
 
     // Delete Action
     isDeleteAction:boolean = false;
@@ -66,7 +73,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     isUnloadAction:boolean = false;
 
 
-    constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly router:Router, private readonly liveStream:SseService, private readonly cdf:ChangeDetectorRef) {}
+    constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly router:Router, private readonly liveStream:SseService, private readonly cdf:ChangeDetectorRef, private readonly logs:LogsService) {}
 
     ngOnInit(): void {
         this.colors = colors;
@@ -174,24 +181,32 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 ...data.currentNode
             })
 
-            if(this.liveData?.battery >= this.configuration.battery.max) {
+            if(this.liveData?.battery >= this.configuration.battery.max && this.isChargeCompleteAcknowledgement) {
                 this.print.log('Robot is charged Enough and sent to the pick location');
                 this.isHomeReached = false;
+                this.isChargingStationReached = false;
+                this.isChargingTaskSent = false;
+                return
                 // this.pickLocationTaskAPI() //Enable while it is working properly
             }
 
-            if(this.liveData?.battery <= this.configuration.battery.min && this.checkForTaskAvailable(this.taskList) && !this.isChargingTaskSent && !this.isTaskListSent) {
+            // If the robot reaches the charging location and battery is less that the battery min value, open the charging mode screen, and work on that Dialog
+
+            if(this.liveData?.battery <= 35 && this.checkForTaskAvailable(this.taskList) && !this.isChargingTaskSent && !this.isTaskListSent) {
                 this.chargingTaskAPI();
                 return;
             }
 
-            if(this.liveData?.currentNode?.current === this.configuration.nodes.chargingNode && this.liveData?.currentNode?.status === 13 && !this.isChargingTaskSent) {
+            if(this.liveData?.currentNode?.current === this.configuration.nodes.chargingNode && this.liveData?.currentNode?.status === 13 && !this.isChargingStationReached) {
                 this.completeTaskAPI();
+                this.isChargingStationReached = true; //It is reached, so that the status of this is changed
+                this.chargeMonitorTimer = setInterval(()=>{this.isChargingAPI()},1000)
                 return
             }
 
             if(data?.currentNode?.current === this.configuration?.nodes?.pickNode && data?.currentNode?.status === 13 && !this.isHomeReached) {
                 this.completeTaskAPI();
+                this.setPickPoint();
                 this.isHomeReached = true;
                 return
             }
@@ -200,6 +215,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.startAcknowledgementTimer();
                 return
             }
+
             else if(!this.isLocalisationError && data?.localisation?.error?.code === 207) {
                 this.isLocalisationError = true;
                 return
@@ -250,7 +266,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.localisationScoreAtMannual = 0;
                 this.print.log('Fetched Localisation Score', this.localisationScoreAtMannual);
                 this.print.log('Initialize API Response', response);
-                this.localisationStatus = response.data.status;
+                this.localisationStatus = this.liveData.localisation.code
                 setTimeout(()=> {
                     const incrementer = setInterval(()=>{
                         if(this.localisationScoreAtMannual >= this.liveData.localisation.score) {
@@ -323,10 +339,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.print.log("Create Task API Response", res);
                 this.isTaskListSent = true;
                 this.isHomeReached = false;
+                this.logs.send(200, 'New Task List sent', list);
             },
             error: (error:any) => {
                 this.print.error('Create Task API Error', error);
                 this.isTaskListSent = false;
+                this.logs.send(400, 'New Task List nog Send', 'Sending Task List API Failure');
             }
         })
     }
@@ -344,10 +362,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     startAcknowledgementTimer() {
 
-        if(this.isAcknowledgement) {
-            this.print.log('Acknowledgement given for the current location')
-            return
-        }
+        // if(this.isAcknowledgement) {
+        //     this.print.log('Acknowledgement given for the current location')
+        //     return
+        // }
 
         this.timer = this.configuration.waitingTime;
         this.isAcknowledgement = true;
@@ -381,6 +399,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     skipTask() {
+        this.skipTaskList[this.liveData?.currentNode?.current] = this.taskList[this.liveData?.currentNode?.current]
         this.taskList[this.liveData?.currentNode?.current] = undefined;
         this.ss.setItem('_taskList', this.taskList);
         this.renderRacks('delete');
@@ -394,7 +413,26 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.isAcknowledgementGiven = false;
                 this.isUnloadAction = false;
 
-                if(this.checkForTaskAvailable(this.taskList) && this.liveData?.currentNode?.current !== this.configuration?.nodes?.pickNode && !this.isChargingTaskSent) {
+                if(this.liveData?.battery <= 35 && this.checkForTaskAvailable(this.taskList) && !this.isChargingTaskSent && !this.isTaskListSent) {
+                    this.chargingTaskAPI();
+                    return;
+                }
+                // if(this.liveData?.battery <= this.configuration?.battery?.min && this.checkForTaskAvailable(this.taskList) && !this.isChargingTaskSent && !this.isTaskListSent) {
+                //     this.chargingTaskAPI();
+                //     return;
+                // }
+
+                if(this.checkForTaskAvailable(this.taskList) && !this.checkForTaskAvailable(this.skipTaskList)) {
+                    this.logs.send(100, 'Skipped Task List', 'Skipped task list is sent to the robot')
+                    this.taskList = {...this.skipTaskList};
+                    this.ss.setItem('_taskList', this.taskList);
+                    this.skipTaskList = {};
+                    this.renderRacks();
+                    this.setPickPoint(this.liveData?.currentNode?.current);
+                    this.sendTask();
+                }
+
+                if(this.checkForTaskAvailable(this.taskList) && this.checkForTaskAvailable(this.skipTaskList) && this.liveData?.currentNode?.current !== this.configuration?.nodes?.pickNode && !this.isChargingTaskSent) {
                     this.pickLocationTaskAPI();
                 }
             },
@@ -404,13 +442,26 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         })
     }
 
-    private setPickPoint() {
-        this.api.post('navitrol/set-pick-location', {id: this.configuration.nodes.pickNode}).subscribe({
+    private setPickPoint(id?:any) {
+        let payload = {}
+        let pickId = "";
+        if(id) {
+            payload = {id};
+            pickId = id
+        }
+        else {
+            payload = {id: this.configuration.nodes.pickNode}
+            pickId = this.configuration?.nodes?.pickNode
+        }
+
+        this.api.post('navitrol/set-pick-location', payload).subscribe({
             next: (response:any) => {
                 this.print.log('Pick Location Set to the robot!!', response);
+                this.logs.send(200, `Pick Location Set => ${pickId}`, 'Pick Location API Success');
             },
             error: (error:any) => {
                 this.print.error('Error happened while sending data to the robot', error);
+                this.logs.send(200, `Pick Location not set => ${id}`, 'Pick Location API Failure');
             }
         })
     }
@@ -426,10 +477,24 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.isTaskListSent = false;
                 this.isChargingTaskSent = true;
                 this.print.log("Go to Charging Location API Triggered", res);
+                this.logs.send(200, 'Charging API', 'Charging API Call Success')
                 // this.completeTaskAPI();
             },
             error: (error:any) => {
                 this.print.error('Charging Location API Error', error);
+                this.logs.send(400, 'Charging API', 'Charging API Call Failure')
+            }
+        })
+    }
+
+    private isChargingAPI() {
+        this.api.get('navitrol/charging-status', {}).subscribe({
+            next: (response:any) => {
+                this.print.log(response);
+                this.isCharging = response.data === 1;
+            },
+            error: (error:any) => {
+                this.print.error('Error Happened while fetching locations in ract-select => ',error)
             }
         })
     }
@@ -443,11 +508,16 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.api.post('navitrol/create-task', payload).subscribe({
             next: (res:any) => {
                 this.isTaskListSent = false;
+                this.isChargingTaskSent = false;
+                this.isChargingStationReached = false;
                 this.print.log("Go to Pick Location API Triggered", res);
+                this.logs.send(200, 'Pick Location Task API', payload);
+
                 // this.completeTaskAPI();
             },
             error: (error:any) => {
                 this.print.error('Pick Location API Error', error);
+                this.logs.send(400, 'Pick Location Task API', 'Pick Location Task API not sent');
             }
         })
     }
