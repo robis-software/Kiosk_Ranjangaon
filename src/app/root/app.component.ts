@@ -55,9 +55,8 @@ export class AppComponent implements OnInit {
             // this.print.log('Live-status=> \n', data);
             const isEmpty = !data || Object.keys(data).length === 0;
             const isNotLive = data?.live === false;
-            // if(data === null || data === undefined || JSON.stringify(data) === '{}' || data.live === false) {
             if((isEmpty || isNotLive) && this.router.url !== '/disconnected') {
-                // this.router.navigateByUrl('/disconnected');
+                this.router.navigateByUrl('/disconnected');
             }
 
             if(this.configuration?.battery.min > this.liveData?.battery) {
