@@ -15,20 +15,20 @@ import TasksCore from '../../core/tasks.core';
 import RobotStateCore from '../../core/robotState.core';
 
 enum RobotState {
-    IDLE,
-    TASK_CREATED,
-    TASK_READY,
-    TASK_SENT,
-    MOVE_NEXT,
-    ARRIVED_PICK,
-    ARRIVED_DROP,
-    ARRIVED_CHARGE,
-    WAITING_ACK,
-    DROP_ACK,
-    CHARGING_REQUESTED,
-    CHARGER_CONNECTED,
-    CHARGING,
-    CHARGING_COMPLETE_ACK
+    IDLE, // 0
+    TASK_CREATED, // 1
+    TASK_READY, // 2
+    TASK_SENT, // 3
+    MOVE_NEXT, // 4
+    ARRIVED_PICK, // 5
+    ARRIVED_DROP, // 6
+    ARRIVED_CHARGE, // 7
+    WAITING_ACK, // 8
+    DROP_ACK, // 9
+    CHARGING_REQUESTED, // 10
+    CHARGER_CONNECTED, // 11
+    CHARGING, // 12
+    CHARGING_COMPLETE_ACK // 13
 }
 
 @Component({
@@ -51,6 +51,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly pickAPI!:TasksCore;
     private readonly chargeAPI!:TasksCore;
     private readonly taskAPI!:TasksCore;
+
+    readonly RobotState = RobotState;
 
     configuration:any;
     racksArray:any[] = []
@@ -102,6 +104,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.taskAPI = new TasksCore(this.api, this.logs, 'task');
     }
 
+    // ===================================================================================================
+    // Angular Events
+    // ===================================================================================================
+
     ngOnInit(): void {
         this.colors = colors;
         this.print = new Print();
@@ -129,9 +135,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             const rackContRef = this.rackContainer.nativeElement;
             rackContRef.style.gridTemplateRows = `repeat(${this.configuration.racks.rows}, 1fr)`;
             rackContRef.style.gridTemplateColumns = `repeat(${this.configuration.racks.columns}, 1fr)`;
-            // this.print.log(rackContRef.style);
         }
 
+    }
+
+    ngOnDestroy(): void {
+        this.subscription.unsubscribe();
     }
 
     generateRacks(size:number) {
@@ -183,8 +192,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     sendRackID(rack:any) {
         if(rack.isLoaded) {
             this.print.log('This rack has been filed already!!');
-            this.isDeleteAction = true && !this.isTaskListSent;
-            this.isUnloadAction = this.isTaskListSent && this.liveData?.currentNode?.status === 13 && this.liveData?.currentNode?.current === +rack.dropLocation;
+            this.isDeleteAction = this.state === RobotState.IDLE;
+            this.isUnloadAction = this.state !== RobotState.IDLE && this.liveData?.currentNode?.status === 13 && this.liveData?.currentNode?.current === +rack.dropLocation;
             this.selectedRack = rack;
             this.print.log('Rack Selected', rack, this.liveData?.currentNode?.current, rack.dropLocation)
             return;
@@ -197,81 +206,41 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     }
 
+    sendTask() {
+        const taskIds = Object.values(this.taskList);
+        const TotalRacks = this.configuration.racks.rows * this.configuration.racks.columns;
+        const filteredTaskList:number[] = [];
+
+        for(let i=1; i<TotalRacks+1; i++) {
+            if(this.taskList[i] !== null && this.taskList[i]?.length !== 0 && this.taskList[i] !== undefined ) {
+                filteredTaskList.push(i);
+            }
+        }
+        this.print.log('Values of Task', taskIds)
+
+        // Check whether the filtered task list is not Zero
+        if(filteredTaskList.length !== 0) {
+            this.print.log('Filtered Task List => SendTask API', filteredTaskList)
+            this.sendTaskList(filteredTaskList);
+        }
+    }
+
+    private sendTaskList(list:number[]) {
+        this.state = RobotState.TASK_READY;
+        this.stateMission(this.liveData);
+    }
+
     private monitorStatus() {
         this.subscription = this.liveStream.serverEvent$.subscribe(async(data:any) => {
             this.liveData = data;
-
-            this.print.log({...data.currentNode})
-
-            if(data?.battery >= this.configuration.battery.max && this.isChargeCompleteAcknowledgement) {
-                this.print.log('Robot is charged Enough and sent to the pick location');
-                this.isHomeReached = false;
-                this.isChargingStationReached = false;
-                this.isChargingTaskSent = false;
-                return
-                // this.pickLocationTaskAPI() //Enable while it is working properly
-            }
-
-            // If the robot reaches the charging location and battery is less that the battery min value, open the charging mode screen, and work on that Dialog
-
-            if(data?.battery <= 35 && this.checkForTaskAvailable(this.taskList) && !this.isChargingTaskSent && !this.isTaskListSent) {
-                this.isChargingTaskSent = await this.chargeAPI.createTask([this.configuration?.nodes?.chargingNode]);
-                return;
-            }
-
-            if(data?.currentNode?.current === this.configuration?.nodes?.chargingNode && this.liveData?.currentNode?.status === 13 && !this.isChargingStationReached) {
-
-                this.isChargingStationReached = await this.chargeAPI.completeTask(this.liveData?.currentNode?.current)
-                if (this.isChargingStationReached) {
-                    this.chargeMonitorTimer = setInterval(() => { this.isChargingAPI() }, 1000);
-                }
-                else {
-                    this.chargeMonitorTimer = null;
-                }
-                return
-            }
-
-            if(data?.currentNode?.current === this.configuration?.nodes?.pickNode && data?.currentNode?.status === 13 && !this.isHomeReached) {
-                this.isHomeReached = await this.pickAPI.completeTask(data?.currentNode?.current);
-                this.setPickPoint();
-                return
-            }
-
-            if(data?.currentNode?.status === 13 && this.isTaskListSent && !this.isAcknowledgement && !this.isAcknowledgementGiven) {
-                this.startAcknowledgementTimer();
-                return
-            }
-
-            if(!this.isLocalisationError && data?.localisation?.error?.code === 207) {
-                this.isLocalisationError = true;
-            }
+            this.print.log({...data.currentNode});
+            this.stateMission(data);
             // Check and assign the pick point automatically if the list is empty and check the current node position for it, so that it is easier to check the robot is in pick location
             // this.print.log('Response from Dashboard => ', this.liveData);
         })
     }
 
     deleteAction() {
-        // this.taskList[this.deleteActionRackID as number] = null;
-        // this.racksArray.forEach((rack:any) => {
-        //     if(rack.id === this.deleteActionRackID) {
-        //         rack.isLoaded = false;
-        //         rack.dropLocation = '';
-        //     }
-        // })
-
-        // this.print.log('Updated racksArray', this.racksArray)
-        // this.print.log('Updated TaskList', this.taskList)
-
-        // this.ss.setItem('_taskList', this.taskList);
-        // this.isDeleteAction = false;
-        // this.deleteActionRackID = null;
-
-        // ================================================================================================
-
-        // Actual format
-        // {
-        //    <location_number> : <rack_ids>[]
-        // }
         this.print.log(this.selectedRack)
         this.taskList[this.selectedRack.dropLocation] = this.taskList[this.selectedRack.dropLocation].filter((rack:number)=> rack !== this.selectedRack.id);
 
@@ -279,8 +248,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.ss.setItem('_taskList', this.taskList);
         this.isDeleteAction = false;
         this.selectedRack = {};
-        this.renderRacks('delete');
-        this.checkForTaskAvailable(this.taskList);
+        this.renderRacks();
     }
 
     localizeRobot() {
@@ -314,64 +282,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.localisationScoreAtMannual = 0;
     }
 
-    sendTask() {
-        const taskIds = Object.values(this.taskList);
-        const TotalRacks = this.configuration.racks.rows * this.configuration.racks.columns;
-        const filteredTaskList:number[] = [];
-
-        for(let i=1; i<TotalRacks+1; i++) {
-            if(this.taskList[i] !== null && this.taskList[i]?.length !== 0 && this.taskList[i] !== undefined ) {
-                filteredTaskList.push(i);
-            }
-        }
-        this.print.log('Values of Task', taskIds)
-        // for(let id in taskIds) {
-        //     if(taskIds[id] !== null && taskIds[id] !== undefined) {
-        //         filteredTaskList.push(+taskIds[id]);
-        //     }
-        // }
-
-        // taskIds.forEach((id) => {
-        //     if(id !== null && id !== undefined) {
-        //         filteredTaskList.push(+id)
-        //     }
-        // })
-
-        // Check whether the filtered task list is not Zero
-        if(filteredTaskList.length !== 0) {
-            this.print.log('Filtered Task List => SendTask API', filteredTaskList)
-            this.sendTaskList(filteredTaskList);
-        }
-    }
-
     unloadAllRacks() {
         this.taskList[this.selectedRack.dropLocation] = this.taskList[this.selectedRack.dropLocation].filter((rack:number)=> rack !== this.selectedRack.id);
         this.ss.setItem('_taskList', this.taskList)
         this.print.log('Updated Task List After Unloading', this.taskList);
         this.renderRacks();
         this.isUnloadAction = false;
-        // this.deleteAction()
-        if(this.taskList[this.selectedRack.dropLocation].length === 0) {
-            this.completeTaskAPI();
-        }
-    }
-
-    private sendTaskList(list:number[]) {
-        this.print.log('Recieved Task List :=>', list);
-
-        this.api.post('navitrol/create-task', {ids: list}).subscribe({
-            next: (res:any) => {
-                this.print.log("Create Task API Response", res);
-                this.isTaskListSent = true;
-                this.isHomeReached = false;
-                this.logs.send(200, 'New Task List sent', list);
-            },
-            error: (error:any) => {
-                this.print.error('Create Task API Error', error);
-                this.isTaskListSent = false;
-                this.logs.send(400, 'New Task List nog Send', 'Sending Task List API Failure');
-            }
-        })
     }
 
     rotateInplace() {
@@ -386,12 +302,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     startAcknowledgementTimer() {
-
-        // if(this.isAcknowledgement) {
-        //     this.print.log('Acknowledgement given for the current location')
-        //     return
-        // }
-
         this.timer = this.configuration.waitingTime;
         this.isAcknowledgement = true;
         this.isAcknowledgementSkip = false;
@@ -427,44 +337,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.skipTaskList[this.liveData?.currentNode?.current] = this.taskList[this.liveData?.currentNode?.current]
         this.taskList[this.liveData?.currentNode?.current] = undefined;
         this.ss.setItem('_taskList', this.taskList);
-        this.renderRacks('delete');
-        this.completeTaskAPI();
-    }
-
-    completeTaskAPI() {
-        this.api.post('navitrol/complete-task', {}).subscribe({
-            next: (response:any) => {
-                this.print.log('Task completed in current Node!!', response);
-                this.isAcknowledgementGiven = false;
-                this.isUnloadAction = false;
-
-                if(this.liveData?.battery <= 35 && this.checkForTaskAvailable(this.taskList) && !this.isChargingTaskSent && !this.isTaskListSent) {
-                    this.chargingTaskAPI();
-                    return;
-                }
-                // if(this.liveData?.battery <= this.configuration?.battery?.min && this.checkForTaskAvailable(this.taskList) && !this.isChargingTaskSent && !this.isTaskListSent) {
-                //     this.chargingTaskAPI();
-                //     return;
-                // }
-
-                if(this.checkForTaskAvailable(this.taskList) && !this.checkForTaskAvailable(this.skipTaskList)) {
-                    this.logs.send(100, 'Skipped Task List', 'Skipped task list is sent to the robot')
-                    this.taskList = {...this.skipTaskList};
-                    this.ss.setItem('_taskList', this.taskList);
-                    this.skipTaskList = {};
-                    this.renderRacks();
-                    this.setPickPoint(this.liveData?.currentNode?.current);
-                    this.sendTask();
-                }
-
-                if(this.checkForTaskAvailable(this.taskList) && this.checkForTaskAvailable(this.skipTaskList) && this.liveData?.currentNode?.current !== this.configuration?.nodes?.pickNode && !this.isChargingTaskSent) {
-                    this.pickLocationTaskAPI();
-                }
-            },
-            error: (error:any) => {
-                this.print.error('Error happened while fetching data from the localisation', error);
-            }
-        })
+        this.renderRacks();
+        this.setState(RobotState.DROP_ACK);
+        this.stateMission(this.liveData);
     }
 
     private setPickPoint(id?:any) {
@@ -491,62 +366,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         })
     }
 
-    private chargingTaskAPI() {
-        this.print.log('Charging Task has sent');
-        const payload = {ids: [this.configuration?.nodes?.chargingNode]}
-
-        this.print.log('Payload send with PickLocation', payload)
-
-        this.api.post('navitrol/create-task', payload).subscribe({
-            next: (res:any) => {
-                this.isTaskListSent = false;
-                this.isChargingTaskSent = true;
-                this.print.log("Go to Charging Location API Triggered", res);
-                this.logs.send(200, 'Charging API', 'Charging API Call Success')
-                // this.completeTaskAPI();
-            },
-            error: (error:any) => {
-                this.print.error('Charging Location API Error', error);
-                this.logs.send(400, 'Charging API', 'Charging API Call Failure')
-            }
-        })
-    }
-
-    private isChargingAPI() {
-        this.api.get('navitrol/charging-status', {}).subscribe({
-            next: (response:any) => {
-                this.print.log(response);
-                this.isCharging = response.data === 1;
-            },
-            error: (error:any) => {
-                this.print.error('Error Happened while fetching locations in ract-select => ',error)
-            }
-        })
-    }
-
-    private pickLocationTaskAPI() {
-        this.print.log('Pick up Location Task has sent');
-        const payload = {ids: [this.configuration?.nodes?.pickNode]}
-
-        this.print.log('Payload send with PickLocation', payload)
-
-        this.api.post('navitrol/create-task', payload).subscribe({
-            next: (res:any) => {
-                this.isTaskListSent = false;
-                this.isChargingTaskSent = false;
-                this.isChargingStationReached = false;
-                this.print.log("Go to Pick Location API Triggered", res);
-                this.logs.send(200, 'Pick Location Task API', payload);
-
-                // this.completeTaskAPI();
-            },
-            error: (error:any) => {
-                this.print.error('Pick Location API Error', error);
-                this.logs.send(400, 'Pick Location Task API', 'Pick Location Task API not sent');
-            }
-        })
-    }
-
     // ===================================================================================================
     // Helper Function
     // ===================================================================================================
@@ -562,53 +381,16 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         else return colors.status.red;
     }
 
-    // Used to check the task list is empty
-    /**
-     *  Used to Check the task list is empty
-     * @param list : Task list
-     * @returns boolean
-     *
-     * true -> if there is no data
-     *
-     * false -> if there is data
-     */
-    private checkForTaskAvailable(list:any) {
-        // const listValues = Object.values(list);
-        // const lenOfList = listValues.length;
-
-        // // Flag
-        // let flag = 0
-
-        // listValues.forEach((listData:any)=> {
-        //     if(listData === null || listData === undefined || listData === '') {
-        //         flag+=1;
-        //         if(flag === lenOfList) {
-        //             this.enableStartButton = false;
-        //         }
-        //     }
-        // })
-
-        // flag = 0;
-
+    private isTaskListEmpty(list:any) {
         const racks = Object.values(list);
         let flag = 0;
 
         racks.forEach((rack:any) => {
             if(rack.length !== 0) {
                 flag+=1;
-
             }
         })
-        this.enableStartButton = (flag !== 0);
         return flag === 0
-    }
-
-    // ===================================================================================================
-    // Angular Events
-    // ===================================================================================================
-
-    ngOnDestroy(): void {
-        this.subscription.unsubscribe();
     }
 
     private isReachedDropLocation(data:any): boolean {
@@ -625,7 +407,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     private isBatteryNeedsCharge(data:any): boolean {
-        return data?.battery <= this.configuration?.battery?.min && this.checkForTaskAvailable(this.taskList)
+        return data?.battery <= this.configuration?.battery?.min && this.isTaskListEmpty(this.taskList)
     }
 
     private isAllUnloaded(locationId:number):boolean {
@@ -636,16 +418,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             return true
         }
         return false
-    }
-
-    // Use this in to bring the acknowledgement button in charging screen and press the button to change state to RobotState.CHARGING_COMPLETE_ACK
-    isBatteryFullyCharged(data:any): boolean {
-        return data?.battery >= this.configuration?.battery?.max
-    }
-
-    private setState(newState:RobotState) {
-        this.print.log(`State Changed from ${this.state} -> ${newState}`);
-        this.state = newState;
     }
 
     private isChargerConnected():Promise<boolean> {
@@ -662,6 +434,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         })
     }
 
+    // Use this in to bring the acknowledgement button in charging screen and press the button to change state to RobotState.CHARGING_COMPLETE_ACK
+    isBatteryFullyCharged(data:any): boolean {
+        return data?.battery >= this.configuration?.battery?.max
+    }
+
+    private setState(newState:RobotState) {
+        this.print.log(`State Changed from ${this.state} -> ${newState}`);
+        this.state = newState;
+    }
 
     private async stateMission(data:any) {
         switch(this.state) {
@@ -671,7 +452,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     break;
                 }
 
-                if(this.checkForTaskAvailable(this.taskList)) {
+                if(this.isTaskListEmpty(this.taskList)) {
                     this.setState(RobotState.IDLE);
                 }
                 else {
@@ -728,6 +509,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
             // This will be given in the Ack button of the drop location reached acknowledgement Screen
             case RobotState.DROP_ACK:
+                this,this.isUnloadAction = false;
                 if(this.isAllUnloaded(data?.currentNode?.current)) {
                     this.setState(RobotState.MOVE_NEXT);
                 }
@@ -736,6 +518,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             case RobotState.MOVE_NEXT:
                 if(await this.taskAPI.completeTask(data?.currentNode?.current)) {
                     this.setState(RobotState.TASK_SENT)
+                }
+
+                if(this.isTaskListEmpty(this.taskList)) {
+                    await this.pickAPI.createTask([this.configuration?.nodes?.pickNode]);
+                    this.setState(RobotState.TASK_SENT);
                 }
                 break;
 

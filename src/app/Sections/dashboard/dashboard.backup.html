@@ -2,14 +2,14 @@
     <div class="w-full h-[900px] mt-20 flex items-center justify-start flex-col">
         <div #rackContainer class="grid gap-4 w-[500px] h-[650px]">
             @for (rack of racksArray; track $index) {
-                <button (click)="sendRackID(rack)" *ngIf="rack" [ngClass]="{'bg-racks': !rack.isLoaded || state === 0, 'bg-status-green': (rack.isLoaded && state !== 0) || (liveData?.currentNode?.current === +rack.dropLocation && liveData?.currentNode?.status === 13 && isAcknowledgementGiven), 'animate-pulse': (liveData?.currentNode?.current === +rack.dropLocation) && rack.isLoaded && isAcknowledgementGiven}" class="flex items-center justify-center w-full h-full rounded-[12px] duration-100">
+                <button (click)="sendRackID(rack)" *ngIf="rack" [ngClass]="{'bg-racks': !rack.isLoaded || isTaskListSent, 'bg-status-green': (rack.isLoaded && !isTaskListSent) || (liveData?.currentNode?.current === +rack.dropLocation && liveData?.currentNode?.status === 13 && isAcknowledgementGiven), 'animate-pulse': (liveData?.currentNode?.current === +rack.dropLocation) && rack.isLoaded && isAcknowledgementGiven}" class="flex items-center justify-center w-full h-full rounded-[12px] duration-100">
                     <ranjangaon-icons *ngIf="!rack.isLoaded" [icon]="'rack'" [size]="80" [color]="'#AFAFAF'"></ranjangaon-icons>
                     <!-- <div *ngIf="(rack.isLoaded && !isTaskListSent) || (liveData?.currentNode?.current === +rack.dropLocation && liveData?.currentNode?.status === 13 && isAcknowledgementGiven)" class="flex flex-col items-center justify-center gap-2 w-max h-max"> -->
                     <div *ngIf="rack.isLoaded" class="flex flex-col items-center justify-center gap-2 w-max h-max">
                         <div class="size-[73px] bg-white flex items-center justify-center pb-3 rounded-[8px]">
                             <ranjangaon-icons class="mt-3" [icon]="'location'" [size]="48" [color]="colors.primary"></ranjangaon-icons>
                         </div>
-                        <p [ngClass]="{'text-white': (liveData?.currentNode?.current === +rack.dropLocation && state === 0 && isAcknowledgementGiven) || (rack.isLoaded && state !== 0)}" class="text-[40px] font-medium">LOC - {{rack.dropLocation < 10 ? '0'+rack.dropLocation : rack.dropLocation}}</p>
+                        <p [ngClass]="{'text-white': (liveData?.currentNode?.current === +rack.dropLocation && isTaskListSent && isAcknowledgementGiven) || (rack.isLoaded && !isTaskListSent)}" class="text-[40px] font-medium">LOC - {{rack.dropLocation < 10 ? '0'+rack.dropLocation : rack.dropLocation}}</p>
                     </div>
 
                 </button>
@@ -48,11 +48,11 @@
             <!-- <button (click)="localizeRobot()" class="w-[150px] h-[65px] rounded-[6px] bg-lavender flex items-center justify-center text-white font-normal text-[20px]">Localise</button> -->
         </div>
 
-        <button *ngIf="taskList.length !== 0 && state === 0" (click)="sendTask()" class="w-[200px] h-[65px] rounded-[6px] bg-status-green flex items-center justify-center text-white font-normal text-[20px]">
+        <button *ngIf="enableStartButton && !isTaskListSent" (click)="sendTask()" class="w-[200px] h-[65px] rounded-[6px] bg-status-green flex items-center justify-center text-white font-normal text-[20px]">
             Start
         </button>
 
-        <button *ngIf="state !== 0" (click)="rotateInplace()" class="size-[85px] rounded-[6px] bg-[#263238] flex items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
+        <button *ngIf="!enableStartButton" (click)="rotateInplace()" class="size-[85px] rounded-[6px] bg-[#263238] flex items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
             <ranjangaon-icons [icon]="'turn'" [size]="36" [color]="'#FFF'"></ranjangaon-icons>
         </button>
     </div>
@@ -113,7 +113,7 @@
 </fleet-popup>
 
 <!-- Acknwoledgement Popup -->
-<fleet-popup *ngIf="state === 8 && taskList.length !== 0" [isClose]="false" [title]="'Attention Needed!!'">
+<fleet-popup *ngIf="isAcknowledgement && enableStartButton" [isClose]="false" [title]="'Attention Needed!!'">
     <div *ngIf="!isAcknowledgementSkip" class="flex flex-col items-start justify-start w-full translate-x-full h-max animate-slideIn">
 
         <div class="w-full h-[350px] mt-4 flex flex-col items-center justify-center relative">
@@ -164,7 +164,7 @@
 </fleet-popup>
 
 <!-- Localisation Error -->
-<fleet-popup *ngIf="liveData?.localisation?.code === 207 && !isLocalize" [isClose]="false" [title]="'Robot Delocalized!!'">
+<fleet-popup *ngIf="this.isLocalisationError && !isLocalize" [isClose]="false" [title]="'Robot Delocalized!!'">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full h-[300px]">
             <ranjangaon-icons [icon]="'localisationScore'" [size]="200" [color]="colors.dialogIcon"></ranjangaon-icons>
@@ -173,7 +173,7 @@
         <p class="text-[20px] mt-4 leading-[45px]">Tap the button to localize the robot.</p>
 
         <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
-            <button (click)="isLocalize = true" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button (click)="isLocalisationError = false; isLocalize = true" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 Localize
             </button>
         </div>
@@ -200,7 +200,7 @@
                 Cancel
             </button>
 
-            <button (click)="state = 9" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button (click)="unloadAllRacks()" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 Unload
             </button>
         </div>
@@ -223,7 +223,7 @@
     </div>
 </fleet-popup>
 
-<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode && (state === 3 || state === 12 || state === 11)" [title]="'Charging Mode!!'" [isClose]="false">
+<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode && isChargingStationReached" [title]="'Charging Mode!!'" [isClose]="false">
     <div class="w-full h-full">
         <div class="w-max h-[400px] overflow-hidden mt-8 flex items-center justify-center relative">
             <ranjangaon-circular-indicator [angle]="360" [size]="500" [color]="batteryIndicatorColor(liveData?.battery)" [data]="+liveData?.battery || 30" [rotate]="-90" >
@@ -237,7 +237,7 @@
             </ranjangaon-circular-indicator>
         </div>
 
-        <div *ngIf="state === 12 && liveData?.batter >= configuration?.battery.max" class="mt-4 animate-slideIn">
+        <div *ngIf="isCharging && liveData?.batter >= configuration?.battery.max" class="mt-4 animate-slideIn">
             <p class="text-[20px] leading-[45px]">Tap Acknowledge to begin unloading the materials at this location.</p>
 
             <span class="w-full mt-6">
@@ -245,7 +245,7 @@
                 <p class="text-[20px] mt-1 leading-[45px]">If no acknowledgment is received within the given time, the system will skip unloading and proceed to the next destination automatically.</p>
             </span>
 
-            <button (click)="state = 13" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px] mt-16">
+            <button class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px] mt-16">
                 Acknowledge
             </button>
         </div>

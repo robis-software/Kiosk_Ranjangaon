@@ -13,10 +13,10 @@ import { Subscription } from 'rxjs';
 import { LogsService } from '../../Services/logs.service';
 
 @Component({
-  selector: 'ranjangaon-dashboard',
+  selector: 'ranjangaon-dashboard-backup',
   standalone: true,
   imports: [CommonModule, IconsComponent, CircularIndicatorComponent, PopupComponent],
-  templateUrl: './dashboard.component.html',
+  templateUrl: './dashboard.backup.html',
   styleUrl: './dashboard.component.css'
 })
 
