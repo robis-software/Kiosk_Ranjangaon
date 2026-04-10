@@ -16,8 +16,8 @@ import { LogsService } from '../../Services/logs.service';
   selector: 'ranjangaon-dashboard',
   standalone: true,
   imports: [CommonModule, IconsComponent, CircularIndicatorComponent, PopupComponent],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+//   templateUrl: './dashboard.component.html',
+//   styleUrl: './dashboard.component.css'
 })
 
 export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -42,9 +42,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     isHomeReached:boolean = false;
 
-    pickLocationVisitedCount:number = 0;
-    pickLocationLen:number = 0
-
     isChargingTaskSent:boolean = false;
     isChargingStationReached:boolean = true;
     isCharging:boolean = false;
@@ -68,19 +65,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     isAcknowledgementSkip:boolean = false;
     isAcknowledgementGiven:boolean = false;
 
-    // Pick up acknowledgement
-    isPickupAcknowledgement:boolean = false;
-    isPickupAcknowledgementSkip:boolean = false;
-    isPickupAcknowledgementGiven:boolean = false;
-
     // Acknowledgement Timer
     ackTimer:any;
-
-    // Pickup Acknowledgement Timer
-    pickupAckTimer:any;
-
     timer:number = 0
-
 
     // Unload Action
     isUnloadAction:boolean = false;
@@ -96,7 +83,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.configuration = this.ss.getItem('_config');
         this.monitorStatus();
         this.ss.removeItem("_authenication");
-        this.pickLocationLen = this.configuration?.nodes?.pickNode.length || 0;
 
         const tasks = this.ss.getItem('_taskList')
 
@@ -202,37 +188,28 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.isHomeReached = false;
                 this.isChargingStationReached = false;
                 this.isChargingTaskSent = false;
-                this.chargeMonitorTimer = null;
-                this.pickLocationTaskAPI(this.configuration?.nodes?.pickNode[0]); //Enable while it is working properly
-                return;
+                return
+                // this.pickLocationTaskAPI() //Enable while it is working properly
             }
 
             // If the robot reaches the charging location and battery is less that the battery min value, open the charging mode screen, and work on that Dialog
 
-            if(data?.battery <= this.configuration?.battery.min && this.checkForTaskAvailable(this.taskList) && !this.isChargingTaskSent && !this.isTaskListSent) {
+            if(this.liveData?.battery <= 35 && this.checkForTaskAvailable(this.taskList) && !this.isChargingTaskSent && !this.isTaskListSent) {
                 this.chargingTaskAPI();
                 return;
             }
 
-            if(data?.currentNode?.current === this.configuration.nodes.chargingNode && data?.currentNode?.status === 13 && !this.isChargingStationReached) {
+            if(this.liveData?.currentNode?.current === this.configuration.nodes.chargingNode && this.liveData?.currentNode?.status === 13 && !this.isChargingStationReached) {
                 this.completeTaskAPI();
                 this.isChargingStationReached = true; //It is reached, so that the status of this is changed
-                // this.chargeMonitorTimer = setInterval(()=>{this.isChargingAPI()},1000)
+                this.chargeMonitorTimer = setInterval(()=>{this.isChargingAPI()},1000)
                 return
             }
 
-            // if(data?.currentNode?.current === this.configuration?.nodes?.pickNode && data?.currentNode?.status === 13 && !this.isHomeReached) {
-            if(this.configuration?.nodes?.pickNode.includes(data?.currentNode?.current) && data?.currentNode?.status === 13 && !this.isHomeReached) {
+            if(data?.currentNode?.current === this.configuration?.nodes?.pickNode && data?.currentNode?.status === 13 && !this.isHomeReached) {
                 this.completeTaskAPI();
-                if(data?.currentNode?.current === this.configuration?.nodes?.pickNode[0]) {
-                    this.setPickPoint();
-                    this.isHomeReached = true;
-                }
-                return
-            }
-
-            if(data?.currentNode?.status === 13 && !this.isTaskListSent && !this.isPickupAcknowledgement && !this.isPickupAcknowledgementGiven && this.configuration?.nodes?.pickNode?.includes(data?.currentNode.current)) {
-                this.startPickupAcknowledgementTimer();
+                this.setPickPoint();
+                this.isHomeReached = true;
                 return
             }
 
@@ -333,11 +310,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     }
 
-    sendToNextPickLocation() {
-        this.pickLocationVisitedCount = this.pickLocationVisitedCount+1;
-        this.pickLocationTaskAPI(this.configuration?.nodes?.pickNode[this.pickLocationVisitedCount]);
-    }
-
     unloadAllRacks() {
         this.taskList[this.selectedRack.dropLocation] = this.taskList[this.selectedRack.dropLocation].filter((rack:number)=> rack !== this.selectedRack.id);
         this.ss.setItem('_taskList', this.taskList)
@@ -357,7 +329,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.print.log("Create Task API Response", res);
                 this.isTaskListSent = true;
                 this.isHomeReached = false;
-                this.skipTaskList = {};
                 this.logs.send(200, 'New Task List sent', list);
             },
             error: (error:any) => {
@@ -379,7 +350,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         })
     }
 
-    // Acknowledgement Timer
     startAcknowledgementTimer() {
         this.timer = this.configuration.waitingTime;
         this.isAcknowledgement = true;
@@ -413,54 +383,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     skipTask() {
-        if(!this.isTaskSkipped) {
-            this.skipTaskList[this.liveData?.currentNode?.current] = this.taskList[this.liveData?.currentNode?.current]
-        }
+        this.skipTaskList[this.liveData?.currentNode?.current] = this.taskList[this.liveData?.currentNode?.current]
         this.taskList[this.liveData?.currentNode?.current] = undefined;
         this.ss.setItem('_taskList', this.taskList);
         this.renderRacks('delete');
         this.completeTaskAPI();
-    }
-
-    // Pickup Acknowledgement Timer
-    startPickupAcknowledgementTimer() {
-        this.timer = this.configuration.waitingTime;
-        this.isPickupAcknowledgement = true;
-        this.isPickupAcknowledgementSkip = false;
-        setTimeout(()=>{
-            this.pickupAckTimer = setInterval(()=>{
-                if(this.timer <= 0) {
-                    clearInterval(this.pickupAckTimer);
-                    this.isPickupAcknowledgement = false;
-                    this.isPickupAcknowledgementSkip = false;
-                    this.clearPickupAcknowledgementTimer();
-                    this.skipThisPickupLocation();
-                }
-                else {
-                    this.timer-=1
-                }
-            }, 1000)
-        },100)
-    }
-
-    clearPickupAcknowledgementTimer() {
-        this.isPickupAcknowledgement = false;
-        this.isPickupAcknowledgementSkip = false;
-        this.isPickupAcknowledgementGiven = true;
-        clearInterval(this.pickupAckTimer);
-    }
-
-    skipPickupAckowledgement() {
-        this.isPickupAcknowledgementSkip = true;
-        clearInterval(this.pickupAckTimer);
-    }
-
-    skipThisPickupLocation() {
-        if(this.pickLocationVisitedCount === this.pickLocationLen) {
-            this.sendTask();
-            return
-        }
-        this.sendToNextPickLocation();
     }
 
     completeTaskAPI() {
@@ -490,9 +417,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.sendTask();
                 }
 
-                // if(this.checkForTaskAvailable(this.taskList) && this.checkForTaskAvailable(this.skipTaskList) && this.liveData?.currentNode?.current !== this.configuration?.nodes?.pickNode && && !this.isChargingTaskSent) {
-                if(this.checkForTaskAvailable(this.taskList) && this.checkForTaskAvailable(this.skipTaskList) && this.configuration?.nodes?.pickNode.includes(this.liveData?.currentNode?.current) && !this.isChargingTaskSent) {
-                    this.pickLocationTaskAPI(this.configuration?.nodes?.pickNode[0]);
+                if(this.checkForTaskAvailable(this.taskList) && this.checkForTaskAvailable(this.skipTaskList) && this.liveData?.currentNode?.current !== this.configuration?.nodes?.pickNode && !this.isChargingTaskSent) {
+                    this.pickLocationTaskAPI();
                 }
             },
             error: (error:any) => {
@@ -510,7 +436,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         else {
             payload = {id: this.configuration.nodes.pickNode}
-            pickId = this.configuration?.nodes?.pickNode[this.pickLocationVisitedCount]
+            pickId = this.configuration?.nodes?.pickNode
         }
 
         this.api.post('navitrol/set-pick-location', payload).subscribe({
@@ -543,8 +469,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.logs.send(400, 'Charging API', 'Charging API Call Failure')
             }
         })
-
-        this.chargeMonitorTimer = setInterval(()=>{this.isChargingAPI()},1000)
     }
 
     private isChargingAPI() {
@@ -559,9 +483,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         })
     }
 
-    private pickLocationTaskAPI(pickLocatioId:any) {
+    private pickLocationTaskAPI() {
         this.print.log('Pick up Location Task has sent');
-        const payload = {ids: [pickLocatioId]}
+        const payload = {ids: [this.configuration?.nodes?.pickNode]}
 
         this.print.log('Payload send with PickLocation', payload)
 
@@ -570,14 +494,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.isTaskListSent = false;
                 this.isChargingTaskSent = false;
                 this.isChargingStationReached = false;
-                this.isHomeReached = false;
                 this.isTaskSkipped = false;
-
-                if(pickLocatioId === this.configuration?.nodes?.pickNode[0]) {
-                    this.pickLocationVisitedCount = 0;
-                    this.pickLocationLen = this.configuration?.nodes?.pickNode.length || 0;
-                }
-
                 this.print.log("Go to Pick Location API Triggered", res);
                 this.logs.send(200, 'Pick Location Task API', payload);
             },

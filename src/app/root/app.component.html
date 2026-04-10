@@ -5,7 +5,7 @@
   <ranjangaon-layout></ranjangaon-layout>
 </div>
 
-<fleet-popup *ngIf="isBatteryLow" [isClose]="false" [title]="'Battery Low!!'">
+<fleet-popup *ngIf="isBatteryLow && liveData?.live" [isClose]="false" [title]="'Battery Low!!'">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full py-12 h-max">
             <ranjangaon-icons [icon]="'lowBattery'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
