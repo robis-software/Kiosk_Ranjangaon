@@ -258,8 +258,8 @@
 </fleet-popup>
 
 <!-- Pick Up Acknwoledgement Popup -->
-<fleet-popup *ngIf="isPickupAcknowledgement && !enableStartButton" [isClose]="false" [title]="'Attention Needed!!'">
-    <div *ngIf="!isAcknowledgementSkip" class="flex flex-col items-start justify-start w-full translate-x-full h-max animate-slideIn">
+<fleet-popup *ngIf="isPickupAcknowledgement && !isTaskListSent" [isClose]="false" [title]="'Attention Needed!!'">
+    <div *ngIf="!isPickupAcknowledgementSkip" class="flex flex-col items-start justify-start w-full translate-x-full h-max animate-slideIn">
 
         <div class="w-full h-[350px] mt-4 flex flex-col items-center justify-center relative">
             <p class="text-[96px] font-semibold text-black w-[295px]">00:{{timer < 10 ? '0'+timer : timer}}</p>
@@ -274,17 +274,17 @@
         </span>
 
         <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
-            <button (click)="skipAckowledgement()" class="w-full h-[78px] border-2 border-primary text-primary flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button (click)="skipPickupAckowledgement()" class="w-full h-[78px] border-2 border-primary text-primary flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 Skip
             </button>
 
-            <button (click)="clearAcknowledgementTimer()" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button (click)="clearPickupAcknowledgementTimer()" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 Acknowledge
             </button>
         </div>
     </div>
 
-    <div *ngIf="isAcknowledgementSkip" class="flex flex-col items-start justify-start w-full h-max animate-slideIn">
+    <div *ngIf="isPickupAcknowledgementSkip" class="flex flex-col items-start justify-start w-full h-max animate-slideIn">
         <div class="flex items-center justify-center w-full py-12 h-max">
             <ranjangaon-icons [icon]="'skipTask'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
         </div>
@@ -297,11 +297,11 @@
         </span>
 
         <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
-            <button (click)="isAcknowledgementSkip = false; startAcknowledgementTimer()" class="w-full h-[78px] border-2 border-primary text-primary flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button (click)="isPickupAcknowledgementSkip = false; startPickupAcknowledgementTimer()" class="w-full h-[78px] border-2 border-primary text-primary flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 Cancel
             </button>
 
-            <button (click)="clearAcknowledgementTimer(); skipTask();" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button (click)="clearPickupAcknowledgementTimer(); skipTask();" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 Skip Task
             </button>
         </div>

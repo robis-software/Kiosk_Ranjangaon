@@ -16,8 +16,8 @@ import { LogsService } from '../../Services/logs.service';
   selector: 'ranjangaon-dashboard',
   standalone: true,
   imports: [CommonModule, IconsComponent, CircularIndicatorComponent, PopupComponent],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+//   templateUrl: './dashboard.component.html',
+//   styleUrl: './dashboard.component.css'
 })
 
 export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {

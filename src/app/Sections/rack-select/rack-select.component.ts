@@ -39,7 +39,7 @@ export class RackSelectComponent implements OnInit {
 
     private fetchLocations() {
         this.taskList = this.ss.getItem('_taskList');
-        const locationToBeIgnored = [this.configuration.nodes.pickNode, this.configuration.nodes.chargingNode]
+        const locationToBeIgnored = this.ignoreLocations();
         this.api.get('navitrol/location-list', {}).subscribe({
             next: (response:any) => {
                 this.print.log(response);
@@ -53,8 +53,24 @@ export class RackSelectComponent implements OnInit {
         })
     }
 
+    private ignoreLocations():number[] {
+        const ignoredLocations = [];
+        const lenOfPickNodeList = this.configuration?.nodes?.pickNode.length;
+
+        // Pick Nodes added to the ignorance list
+        for(let i=0; i<lenOfPickNodeList; i++) {
+            ignoredLocations.push(this.configuration?.nodes?.pickNode[i])
+        }
+
+        // Add charging node to the ignorance list
+        ignoredLocations.push(this.configuration?.nodes?.chargingNode);
+
+        return ignoredLocations;
+
+    }
+
     private setPickPoint() {
-        this.api.post('navitrol/set-pick-location', {id: this.configuration.nodes.pickNode}).subscribe({
+        this.api.post('navitrol/set-pick-location', {id: this.configuration.nodes.pickNode[0]}).subscribe({
             next: (response:any) => {
                 this.print.log('Pick Location Set to the robot!!', response);
             },

@@ -509,7 +509,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             pickId = id
         }
         else {
-            payload = {id: this.configuration.nodes.pickNode}
+            payload = {id: this.configuration.nodes.pickNode[0]}
             pickId = this.configuration?.nodes?.pickNode[this.pickLocationVisitedCount]
         }
 
