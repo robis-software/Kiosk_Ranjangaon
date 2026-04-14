@@ -42,8 +42,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     isHomeReached:boolean = false;
 
-    pickLocationVisitedCount:number = 0;
-    pickLocationLen:number = 0
+    currentPickLocation:number = 0;
 
     isChargingTaskSent:boolean = false;
     isChargingStationReached:boolean = true;
@@ -96,7 +95,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.configuration = this.ss.getItem('_config');
         this.monitorStatus();
         this.ss.removeItem("_authenication");
-        this.pickLocationLen = this.configuration?.nodes?.pickNode.length || 0;
 
         const tasks = this.ss.getItem('_taskList')
 
@@ -120,7 +118,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             rackContRef.style.gridTemplateColumns = `repeat(${this.configuration.racks.columns}, 1fr)`;
             // this.print.log(rackContRef.style);
         }
-
     }
 
     generateRacks(size:number) {
@@ -226,12 +223,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.completeTaskAPI();
                 if(data?.currentNode?.current === this.configuration?.nodes?.pickNode[0]) {
                     this.setPickPoint();
-                    this.isHomeReached = true;
                 }
+                this.isHomeReached = true;
                 return
             }
 
-            if(data?.currentNode?.status === 13 && !this.isTaskListSent && !this.isPickupAcknowledgement && !this.isPickupAcknowledgementGiven && this.configuration?.nodes?.pickNode?.includes(data?.currentNode.current)) {
+
+            console.log('Start Pick UP timer =>', data?.currentNode?.status === 13 && !this.isTaskListSent && !this.isPickupAcknowledgement && !this.isPickupAcknowledgementGiven && this.configuration?.nodes?.pickNode?.includes(data?.currentNode.current))
+
+            if(data?.currentNode?.status === 13 && !this.isTaskListSent && !this.isPickupAcknowledgement && !this.isPickupAcknowledgementGiven && this.configuration?.nodes?.pickNode?.includes(data?.currentNode.current) && data?.currentNode?.current !== this.configuration?.nodes?.pickNode[0]) {
                 this.startPickupAcknowledgementTimer();
                 return
             }
@@ -315,16 +315,24 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     sendTask() {
-        const taskIds = Object.values(this.taskList);
+        this.taskList = this.ss.getItem('_taskList');
+        const taskIds = Object.keys(this.taskList);
         const TotalRacks = this.configuration.racks.rows * this.configuration.racks.columns;
         const filteredTaskList:number[] = [];
 
+        alert('Button Pressed Start');
+        console.log("++++++++++++++",this.taskList);
+
         for(let i=1; i<TotalRacks+1; i++) {
+            console.log(this.taskList[i]);
             if(this.taskList[i] !== null && this.taskList[i]?.length !== 0 && this.taskList[i] !== undefined ) {
                 filteredTaskList.push(i);
             }
         }
-        this.print.log('Values of Task', taskIds)
+
+
+        this.print.log('Values of Task', taskIds);
+        this.print.log('filtered logs', filteredTaskList)
 
         // Check whether the filtered task list is not Zero
         if(filteredTaskList.length !== 0) {
@@ -334,8 +342,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     sendToNextPickLocation() {
-        this.pickLocationVisitedCount = this.pickLocationVisitedCount+1;
-        this.pickLocationTaskAPI(this.configuration?.nodes?.pickNode[this.pickLocationVisitedCount]);
+        this.currentPickLocation += 1
+        this.pickLocationTaskAPI(this.configuration?.nodes?.pickNode[this.currentPickLocation]);
     }
 
     unloadAllRacks() {
@@ -456,7 +464,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     skipThisPickupLocation() {
-        if(this.pickLocationVisitedCount === this.pickLocationLen) {
+        if(this,this.currentPickLocation === this.configuration?.nodes?.pickNode.length - 1) {
             this.sendTask();
             return
         }
@@ -491,7 +499,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
 
                 // if(this.checkForTaskAvailable(this.taskList) && this.checkForTaskAvailable(this.skipTaskList) && this.liveData?.currentNode?.current !== this.configuration?.nodes?.pickNode && && !this.isChargingTaskSent) {
-                if(this.checkForTaskAvailable(this.taskList) && this.checkForTaskAvailable(this.skipTaskList) && this.configuration?.nodes?.pickNode.includes(this.liveData?.currentNode?.current) && !this.isChargingTaskSent) {
+                if(this.checkForTaskAvailable(this.taskList) && this.checkForTaskAvailable(this.skipTaskList) && this.configuration?.nodes?.pickNode.includes(this.liveData?.currentNode?.current) && !this.isChargingTaskSent && !this.isHomeReached) {
                     this.pickLocationTaskAPI(this.configuration?.nodes?.pickNode[0]);
                 }
             },
@@ -510,7 +518,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         else {
             payload = {id: this.configuration.nodes.pickNode[0]}
-            pickId = this.configuration?.nodes?.pickNode[this.pickLocationVisitedCount]
+            pickId = this.configuration?.nodes?.pickNode[0]
         }
 
         this.api.post('navitrol/set-pick-location', payload).subscribe({
@@ -574,8 +582,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.isTaskSkipped = false;
 
                 if(pickLocatioId === this.configuration?.nodes?.pickNode[0]) {
-                    this.pickLocationVisitedCount = 0;
-                    this.pickLocationLen = this.configuration?.nodes?.pickNode.length || 0;
+                    this.currentPickLocation = 0;
                 }
 
                 this.print.log("Go to Pick Location API Triggered", res);

@@ -49,12 +49,8 @@
             <!-- <button (click)="localizeRobot()" class="w-[150px] h-[65px] rounded-[6px] bg-lavender flex items-center justify-center text-white font-normal text-[20px]">Localise</button> -->
         </div>
 
-        <button *ngIf="enableStartButton && !isTaskListSent && currentPickLocation === configuration?.nodes?.pickNode.length - 1" (click)="sendTask()" class="w-[200px] h-[65px] rounded-[6px] bg-status-green flex items-center justify-center text-white font-normal text-[20px]">
+        <button *ngIf="enableStartButton && !isTaskListSent" (click)="sendTask()" class="w-[200px] h-[65px] rounded-[6px] bg-status-green flex items-center justify-center text-white font-normal text-[20px]">
             Start
-        </button>
-
-        <button *ngIf="enableStartButton && !isTaskListSent && currentPickLocation !== configuration?.nodes?.pickNode.length - 1" (click)="sendToNextPickLocation()" class="w-[300px] h-[65px] rounded-[6px] bg-lavender flex items-center justify-center text-white font-normal text-[20px]">
-            Go to Next Location
         </button>
 
         <button *ngIf="!enableStartButton" (click)="rotateInplace()" class="size-[85px] rounded-[6px] bg-[#263238] flex items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
@@ -213,7 +209,7 @@
 </fleet-popup>
 
 <!-- Block UI until Reaches home -->
-<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.pickNode[0] && liveData?.currentNode?.status !== 13" [title]="'Returning!!'" [isClose]="false">
+<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.pickNode && liveData?.currentNode?.status !== 13" [title]="'Returning!!'" [isClose]="false">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full py-12 h-max">
             <ranjangaon-icons [icon]="'home-location'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
@@ -252,57 +248,6 @@
 
             <button class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px] mt-16">
                 Acknowledge
-            </button>
-        </div>
-    </div>
-</fleet-popup>
-
-<!-- Pick Up Acknwoledgement Popup -->
-<fleet-popup *ngIf="isPickupAcknowledgement" [isClose]="false" [title]="'Attention Needed!!'">
-    <div *ngIf="!isPickupAcknowledgementSkip" class="flex flex-col items-start justify-start w-full translate-x-full h-max animate-slideIn">
-
-        <div class="w-full h-[350px] mt-4 flex flex-col items-center justify-center relative">
-            <p class="text-[96px] font-semibold text-black w-[295px]">00:{{timer < 10 ? '0'+timer : timer}}</p>
-            <p class="text-[40px] text-primary font-medium">Sec</p>
-        </div>
-
-        <p class="text-[20px] mt-4 leading-[45px]">Tap Acknowledge to begin unloading the materials at this location.</p>
-
-        <span class="w-full mt-6">
-            <p class="text-[22px] font-semibold text-primary">Note</p>
-            <p class="text-[20px] mt-1 leading-[45px]">If no acknowledgment is received within the given time, the system will skip unloading and proceed to the next destination automatically.</p>
-        </span>
-
-        <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
-            <button (click)="skipPickupAckowledgement()" class="w-full h-[78px] border-2 border-primary text-primary flex items-center justify-center rounded-[4px] font-medium text-[22px]">
-                Skip
-            </button>
-
-            <button (click)="clearPickupAcknowledgementTimer()" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
-                Acknowledge
-            </button>
-        </div>
-    </div>
-
-    <div *ngIf="isPickupAcknowledgementSkip" class="flex flex-col items-start justify-start w-full h-max animate-slideIn">
-        <div class="flex items-center justify-center w-full py-12 h-max">
-            <ranjangaon-icons [icon]="'skipTask'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
-        </div>
-
-        <p class="text-[20px] mt-4 leading-[45px]">Are you sure to skip this task ?</p>
-
-        <span class="w-full mt-6">
-            <p class="text-[22px] font-semibold text-primary">Note</p>
-            <p class="text-[20px] mt-1 leading-[45px]">if you press button, the task will be considered as completed and robot will move to next location for executing the task.</p>
-        </span>
-
-        <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
-            <button (click)="isPickupAcknowledgementSkip = false; startPickupAcknowledgementTimer()" class="w-full h-[78px] border-2 border-primary text-primary flex items-center justify-center rounded-[4px] font-medium text-[22px]">
-                Cancel
-            </button>
-
-            <button (click)="clearPickupAcknowledgementTimer(); skipTask();" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
-                Skip Task
             </button>
         </div>
     </div>

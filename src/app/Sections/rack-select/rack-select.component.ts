@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { TitleComponent } from "../../Components/title/title.component";
 import { IconsComponent } from "../../Components/icons/icons.component";
 import Print from '../../Utils/print';
@@ -6,6 +6,7 @@ import { colors } from '../../Utils/colors';
 import { ApiService } from '../../Services/api.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SessionStorageService } from '../../Services/session-storage.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'ranjangaon-rack-select',
@@ -14,11 +15,13 @@ import { SessionStorageService } from '../../Services/session-storage.service';
   templateUrl: './rack-select.component.html',
   styleUrl: './rack-select.component.css'
 })
-export class RackSelectComponent implements OnInit {
+export class RackSelectComponent implements OnInit, OnDestroy {
     colors:any;
     print!:Print;
     locations:any[] = []
     rackId:number = 0;
+
+    private locationDetailsSubscription!:Subscription;
 
     configuration:any;
 
@@ -33,18 +36,18 @@ export class RackSelectComponent implements OnInit {
     ngOnInit(): void {
         this.activeRoute.queryParamMap.subscribe((param:any) => {
             this.rackId = param.get('id');
-            this.fetchLocations();
+            // this.fetchLocations();
+            this.locations = [1,2,3,4,5,6];
+            this.taskList = this.ss.getItem('_taskList');
         })
     }
 
     private fetchLocations() {
-        this.taskList = this.ss.getItem('_taskList');
         const locationToBeIgnored = this.ignoreLocations();
-        this.api.get('navitrol/location-list', {}).subscribe({
+        this.locationDetailsSubscription = this.api.get('navitrol/location-list', {}).subscribe({
             next: (response:any) => {
                 this.print.log(response);
                 this.locations = response.data.filter((data:any) => !locationToBeIgnored.includes(data)).sort();
-
                 this.setPickPoint();
             },
             error: (error:any) => {
@@ -100,5 +103,9 @@ export class RackSelectComponent implements OnInit {
     goHome() {
         this.print.log('Go Home Triggered')
         this.router.navigate(['/']);
+    }
+
+    ngOnDestroy(): void {
+        // this.locationDetailsSubscription.unsubscribe()
     }
 }

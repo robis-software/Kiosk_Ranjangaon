@@ -1,16 +1,16 @@
 import { AfterViewInit, Component, OnInit, ViewChild, ElementRef, OnDestroy, ChangeDetectorRef} from '@angular/core';
-import Print from '../../Utils/print';
-import { SessionStorageService } from '../../Services/session-storage.service';
-import { ApiService } from '../../Services/api.service';
-import { colors } from '../../Utils/colors';
+import Print from '../Utils/print';
+import { SessionStorageService } from '../Services/session-storage.service';
+import { ApiService } from '../Services/api.service';
+import { colors } from '../Utils/colors';
 import { CommonModule } from '@angular/common';
-import { IconsComponent } from "../../Components/icons/icons.component";
-import { CircularIndicatorComponent } from "../../Components/circular-indicator/circular-indicator.component";
+import { IconsComponent } from "../Components/icons/icons.component";
+import { CircularIndicatorComponent } from "../Components/circular-indicator/circular-indicator.component";
 import { Router } from '@angular/router';
-import { PopupComponent } from "../../Components/popup/popup.component";
-import { SseService } from '../../Services/sse.service';
+import { PopupComponent } from "../Components/popup/popup.component";
+import { SseService } from '../Services/sse.service';
 import { Subscription } from 'rxjs';
-import { LogsService } from '../../Services/logs.service';
+import { LogsService } from '../Services/logs.service';
 
 @Component({
   selector: 'ranjangaon-dashboard',

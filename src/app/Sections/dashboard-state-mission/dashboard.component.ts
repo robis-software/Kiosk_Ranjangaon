@@ -1,0 +1,848 @@
+import { AfterViewInit, Component, OnInit, ViewChild, ElementRef, OnDestroy, ChangeDetectorRef} from '@angular/core';
+import Print from '../../Utils/print';
+import { SessionStorageService } from '../../Services/session-storage.service';
+import { ApiService } from '../../Services/api.service';
+import { colors } from '../../Utils/colors';
+import { CommonModule } from '@angular/common';
+import { IconsComponent } from "../../Components/icons/icons.component";
+import { CircularIndicatorComponent } from "../../Components/circular-indicator/circular-indicator.component";
+import { Router } from '@angular/router';
+import { PopupComponent } from "../../Components/popup/popup.component";
+import { SseService } from '../../Services/sse.service';
+import { Subscription } from 'rxjs';
+import { LogsService } from '../../Services/logs.service';
+import TasksCore from '../../core/tasks.core';
+
+enum RobotState {
+    IDLE, //
+    TASK_READY, //
+    TASK_SENT, //
+    MOVE_NEXT_DROP, //
+    MOVE_NEXT_PICK, //
+    ARRIVED_PICK, //
+    ARRIVED_DROP, //
+    ARRIVED_CHARGE, //
+    WAITING_DROP_ACK, //
+    WAITING_PICK_ACK, //
+    DROP_ACK, //
+    PICK_ACK, //
+    CHARGING_REQUESTED, //
+    CHARGER_CONNECTED, //
+    CHARGING, //
+    CHARGING_COMPLETE_ACK //
+}
+
+interface Ack {
+    timerRef: any,
+    given: boolean,
+    skip: boolean
+}
+
+@Component({
+  selector: 'ranjangaon-dashboard',
+  standalone: true,
+  imports: [CommonModule, IconsComponent, CircularIndicatorComponent, PopupComponent],
+  templateUrl: './dashboard.component.html',
+  styleUrl: './dashboard.component.css'
+})
+
+export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
+    @ViewChild('rackContainer')rackContainer!:ElementRef<HTMLDivElement>;
+    private subscription!:Subscription;
+
+    // Actions
+    private readonly pickAPI!:TasksCore;
+    private readonly chargeAPI!:TasksCore;
+    private readonly taskAPI!:TasksCore;
+
+
+    // General Parameters
+    colors:any;
+    print!:Print;
+    configuration:any;
+    type:'IDLE' | 'PICK' | 'DROP' = "IDLE";
+
+    // Live parameters
+    liveData:any;
+
+    // Racks
+    racksArray:any[] = [];
+    selectedRack:any;
+
+    // Task list Parameters
+    createdTaskList:any = {};
+    skippedTaskList:any = {};
+    taskList:number[] = [];
+    isTaskListSent:boolean = false;
+
+    // Robot State
+    currentState:RobotState = RobotState.IDLE;
+    robotState = RobotState;
+
+    // Dialog Parameters
+    isDeleteAction:boolean = false;
+    isUnloadAction:boolean = false;
+
+    // Localisation
+    localisationScore:number = 0;
+    localisationStatus:number = 0;
+    isLocaliseDialogOpen:boolean = false;
+
+    // Home Location parameters
+    isHomeReached:boolean = false;
+
+    // Pick Location
+    pickLocationVisitedCount:number = -1;
+
+    // Charging Location Parameters
+    charging:Record<string, any> = {
+        reached: false,
+        taskSent:false,
+        batteryMonitor: null,
+        disconnectedAckGiven: false,
+        powerConnected: false
+    }
+
+    isPickTaskSent:boolean = false;
+    isDropTaskSent:boolean = false;
+
+    constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly router:Router, private readonly liveStream:SseService, private readonly cdf:ChangeDetectorRef, private readonly logs:LogsService) {
+        this.chargeAPI = new TasksCore(this.api, this.logs, 'charge');
+        this.pickAPI = new TasksCore(this.api, this.logs, 'pick');
+        this.taskAPI = new TasksCore(this.api, this.logs, 'task');
+    }
+
+
+    // ===================================================================================================
+    // Angular Events
+    // ===================================================================================================
+
+    ngOnInit(): void {
+        this.colors = colors;
+        this.print = new Print();
+        this.configuration = this.ss.getItem('_config');
+        this.monitorStatus();
+        this.ss.removeItem("_authenication");
+        this.createdTaskList = this.fetchTaskListFromSS();
+        this.renderRacks();
+        if(this.pickLocationVisitedCount === -1 && !this.ss.getItem("_pickLocationVisitedCount")) {
+            this.ss.setItem('_pickLocationVisitedCount', 1);
+        }
+        this.pickLocationVisitedCount = this.ss.getItem("_pickLocationVisitedCount") || 1;
+    }
+
+    ngAfterViewInit(): void {
+        this.print.log('Configuration from dashboard!! \n',this.configuration);
+        if(this.rackContainer) {
+            const rackContRef = this.rackContainer.nativeElement;
+            rackContRef.style.gridTemplateRows = `repeat(${this.configuration.racks.rows}, 1fr)`;
+            rackContRef.style.gridTemplateColumns = `repeat(${this.configuration.racks.columns}, 1fr)`;
+            // this.print.log(rackContRef.style);
+        }
+    }
+
+    ngOnDestroy(): void {
+        this.subscription.unsubscribe();
+    }
+
+    // ===================================================================================================
+    // Racks Generation based Function
+    // ===================================================================================================
+
+    generateRacks(size:number) {
+        this.racksArray = [];
+        for(let i=0; i< size; i++) {
+            const rack = {
+                isLoaded: false,
+                dropLocation: '',
+                id: this.racksArray.length + 1,
+            }
+            this.racksArray.push(rack)
+        }
+    }
+
+    renderRacks() {
+        this.createdTaskList = this.fetchTaskListFromSS();
+        this.print.log('Tasks Lists =>', this.createdTaskList)
+        const taskLocations:any = Object.keys(this.createdTaskList);
+        const taskRacks:any = Object.values(this.createdTaskList);
+        this.generateRacks(this.configuration.racks.rows * this.configuration.racks.columns);
+        taskLocations.forEach((location:number, index:number)=> {
+            taskRacks[index].forEach((racks:number) => {
+                const currentRack = this.racksArray[racks-1];
+                currentRack.isLoaded = true;
+                currentRack.dropLocation = location;
+                this.racksArray[racks-1] = currentRack;
+            })
+        })
+
+        this.cdf.detectChanges();
+
+        this.print.log('Updated Racks', this.racksArray)
+    }
+
+    // ===================================================================================================
+    // Live Monitor Status
+    // ===================================================================================================
+
+    private monitorStatus() {
+        this.subscription = this.liveStream.serverEvent$.subscribe((data:any) => {
+            this.liveData = data;
+            this.print.log(data?.currentNode);
+            this.stateMachine(data);
+            this.localisationScore = data?.localisation?.score
+            this.localisationStatus = data?.localisation?.code
+        });
+    }
+
+    // ===================================================================================================
+    // State Mission and Its Function
+    // ===================================================================================================
+
+    private setState(newState:RobotState) {
+        this.print.log(`Transistion Happened from ${this.currentState} => ${newState}`);
+        this.currentState = newState;
+    }
+
+    private async stateMachine(data:any) {
+        const nodes = this.configuration?.nodes
+        switch(this.currentState) {
+            case RobotState.IDLE:
+                this.type = 'IDLE';
+                if(this.isBatteryFullyCharged(data) && this.charging['disconnectedAckGiven']) {
+                    this.setState(
+                        await this.pickAPI.createTask([nodes?.pickNode[0]])
+                        ? RobotState.TASK_SENT
+                        : RobotState.IDLE
+                    )
+                    this.charging['disconnectedAckGiven'] = false
+                }
+
+                else if(this.isBatteryNeedsCharge(data)) {
+                    this.setState(RobotState.CHARGING_REQUESTED);
+                }
+
+                else if(this.isTaskListEmpty(this.createdTaskList)) {
+                    this.setState(RobotState.IDLE);
+                }
+                this.isTaskSkipped = false;
+
+                break;
+
+            case RobotState.TASK_READY:
+                if(await this.taskAPI.createTask(this.taskList)) {
+                    this.setState(RobotState.TASK_SENT);
+                    break;
+                }
+                this.print.log('Task List not sent to robot!!')
+                this.setState(RobotState.IDLE);
+                break;
+
+            case RobotState.CHARGING_REQUESTED:
+                if(await this.chargeAPI.createTask([nodes?.chargingNode])) {
+                    this.setState(RobotState.TASK_SENT);
+                }
+                else {
+                    this.setState(RobotState.IDLE);
+                }
+                break;
+
+            case RobotState.TASK_SENT:
+                if(this.isReachedDropLocation(data)) {
+                    this.setState(RobotState.ARRIVED_DROP);
+                    this.charging['reached'] = false;
+                }
+                else if(this.isReachedPickLocation(data)) {
+                    this.setState(RobotState.ARRIVED_PICK);
+                    this.charging['reached'] = false;
+                }
+                else if(this.isReachedChargeLocation(data)) {
+                    this.setState(RobotState.ARRIVED_CHARGE);
+                    this.charging['reached'] = true;
+                }
+                break;
+
+            case RobotState.ARRIVED_PICK:
+                // Only works in the home position
+                if(data?.currentNode?.current === nodes?.pickNode[0]) {
+                    this.setState(await this.pickAPI.completeTask(nodes?.pickNode[0]) ? RobotState.IDLE : RobotState.ARRIVED_PICK);
+                }
+                // Works on all other pick point
+                else {
+                    // const reachedPickLocation = nodes?.pickNode.includes(data?.currentNode.current) ? data?.currentNode.current : -1;
+                    // if(await this.pickAPI.completeTask(reachedPickLocation)) {
+                    //     this.setState(RobotState.PICK_ACK);
+                    // }
+                    // else {
+                    //     this.setState(RobotState.TASK_SENT)
+                    // }
+                    this.pickLocationAck['given'] = false;
+                    this.setState(RobotState.WAITING_PICK_ACK);
+                    this.startAcknowledgementTimer();
+                    break
+                }
+                break;
+
+            case RobotState.ARRIVED_DROP:
+                this.dropLocationAck['given'] = false;
+                this.setState(RobotState.WAITING_DROP_ACK);
+                this.startAcknowledgementTimer();
+                break
+
+            case RobotState.DROP_ACK:
+                this.isUnloadAction = false;
+                if(this.isAllUnloaded(data?.currentNode?.current)) {
+                    this.setState(RobotState.MOVE_NEXT_DROP);
+                }
+                break;
+
+            case RobotState.PICK_ACK:
+                // if(data?.currentNode?.current !== this.configuration?.nodes?.pickNode[0]) { //Already there is check for this condition, this is secondary
+                //     this.setState(RobotState.WAITING_PICK_ACK);
+                //     this.startAcknowledgementTimer();
+                // }
+                this.setState(RobotState.MOVE_NEXT_PICK)
+                break;
+
+            case RobotState.MOVE_NEXT_DROP:
+                if(this.isTaskListEmpty(this.createdTaskList)) {
+                    if(this.checkForSkippedTask()) {
+                        this.isTaskSkipped = true;
+                        this.type = 'DROP';
+                        this.setState(RobotState.TASK_SENT);
+                        break;
+                    }
+                    await this.pickAPI.createTask([nodes?.pickNode[0]]);
+                    this.type = 'PICK'
+                    this.setState(RobotState.TASK_SENT);
+                }
+                else if(await this.taskAPI.completeTask(data?.currentNode?.current)) {
+                    this.setState(RobotState.TASK_SENT)
+                }
+
+                break;
+
+            case RobotState.MOVE_NEXT_PICK:
+                // if(await this.pickAPI.createTask([nodes?.pickNode[this.currentPickLocationIndex]])) {
+                //     this.setState(RobotState.TASK_SENT)
+                // }
+
+                const reachedPickLocation = nodes?.pickNode.includes(data?.currentNode?.current) ? data?.currentNode?.current : -1;
+                if(await this.pickAPI.completeTask(reachedPickLocation)) {
+                    this.pickLocationVisitedCount+=1;
+                    this.ss.setItem('_pickLocationVisitedCount', this.pickLocationVisitedCount)
+                    this.setState(RobotState.TASK_SENT);
+                }
+                break;
+
+            case RobotState.ARRIVED_CHARGE:
+                if(await this.chargeAPI.completeTask(this.configuration?.nodes?.chargingNode)) {
+                    this.setState(RobotState.CHARGER_CONNECTED);
+                }
+                this.charging['disconnectedAckGiven'] = false
+                break;
+
+            case RobotState.CHARGER_CONNECTED:
+                if(await this.isChargerConnected()) {
+                    this.setState(RobotState.CHARGING);
+                    // If the battery is fully charged an button will be shown in the UI to change state to RobotState.CHARGING_COMPLETE_ACK
+                }
+                this.charging['disconnectedAckGiven'] = false
+                break;
+
+            case RobotState.CHARGING:
+                if(this.isBatteryFullyCharged(data)) {
+                    this.print.log('Battery full — waiting for charger disconnect acknowledgement');
+                }
+                break;
+
+            case RobotState.CHARGING_COMPLETE_ACK:
+                if(await this.pickAPI.createTask([nodes?.pickNode[0]])) {
+                    this.setState(RobotState.TASK_SENT);
+                }
+                this.charging['disconnectedAckGiven'] = true
+                break;
+        }
+
+    }
+
+    // ===================================================================================================
+    // Functional APIs
+    // 1. In-place rotation API
+    // 2. SendTaskToTheRobot
+    // ===================================================================================================
+
+    rotateInplace() {
+        this.api.post('navitrol/rotate-180', {}).subscribe({
+            next: (res:any) => {
+                this.print.log("Rotate 180deg API Response", res);
+            },
+            error: (error:any) => {
+                this.print.error('Create Task API Error', error);
+            }
+        })
+    }
+
+    sendTaskToTheRobot() {
+        this.createdTaskList = this.fetchTaskListFromSS();
+        this.taskList = this.getAllTheLocationsFromRawData(this.createdTaskList);
+        if(this.taskList.length !== 0) {
+            this.isPickTaskSent = false;
+            this.isDropTaskSent = true;
+            this.setState(RobotState.TASK_READY);
+            this.stateMachine(this.liveData);
+        }
+    }
+
+    // ===================================================================================================
+    // Pick Location and Its function
+    // ===================================================================================================
+
+    /**
+     * If the list size is 1, it make the state to IDLE and if the size is more, list is sent to robot and change the Status to TASK_SENT
+     */
+    async sendPickTasksToRobot(){
+        if(this.getPickNodeListLen() > 1 && !this.isPickTaskSent) {
+            let pickNodes:any[] = Array.from(this.configuration?.nodes?.pickNode);
+            pickNodes.shift()
+            if(await this.pickAPI.createTask(pickNodes)) {
+                this.setState(RobotState.TASK_SENT);
+                this.type = 'PICK';
+                this.isPickTaskSent = true;
+                this.isDropTaskSent = false;
+            }
+            else {
+                this.setState(RobotState.IDLE);
+            }
+        }
+    }
+
+    /**
+     * Used to mark the task as complete or skip task
+     */
+    async skipPickLocation() {
+        this.pickLocationVisitedCount = this.ss.getItem('_pickLocationVisitedCount') || 1;
+        if(this.pickLocationVisitedCount === this.getPickNodeListLen()) {
+            if(await this.taskAPI.createTask(this.taskList)) {
+                this.setState(RobotState.TASK_SENT);
+                this.type = 'DROP';
+            }
+            else {
+                this.setState(RobotState.WAITING_PICK_ACK);
+            }
+            return
+        }
+        this.setState(RobotState.MOVE_NEXT_PICK);
+    }
+
+    // Helper
+    isTaskPresent() {
+        this.createdTaskList = this.fetchTaskListFromSS();
+        const list = this.getAllTheLocationsFromRawData(this.createdTaskList);
+        return list.length === 0 ? false : true
+    }
+
+    // ===================================================================================================
+    // Location Acknowledgement timer - Drop Location and Pick Location
+    // ===================================================================================================
+
+    timer:number = 0
+
+    dropLocationAck:Ack = {
+        skip: false,
+        given: false,
+        timerRef: null
+    }
+
+    pickLocationAck:Ack = {
+        skip: false,
+        given: false,
+        timerRef: null
+    }
+
+    isTaskSkipped:boolean = false;
+
+    startAcknowledgementTimer() {
+        this.timer = this.configuration.waitingTime;
+        this.dropLocationAck['skip'] = false;
+
+        const ackTimer = (callback:any) => {
+            return setInterval(()=>{
+                if(this.timer <= 0) {
+                    callback();
+                    this.clearAcknowledgementTimer();
+                }
+                else {
+                    this.timer-=1
+                }
+            }, 1000)
+        }
+
+        setTimeout(()=>{
+            if(this.currentState === RobotState.WAITING_DROP_ACK) {
+                this.dropLocationAck['timerRef'] = ackTimer(()=> {
+                    clearInterval(this.dropLocationAck['timerRef']);
+                    this.dropLocationAck['skip'] = false;
+                    this.skipTask();
+                });
+            }
+            else if(this.currentState === RobotState.WAITING_PICK_ACK) {
+                this.pickLocationAck['timerRef'] = ackTimer(()=> {
+                    clearInterval(this.pickLocationAck['timerRef']);
+                    this.pickLocationAck['skip'] = false;
+                    this.skipPickLocation();
+                });
+            }
+            else {
+                this.print.log('Some other value is being passed at the time of Waiting ACK');
+            }
+        },500)
+    }
+
+    clearAcknowledgementTimer() {
+        if(this.currentState === RobotState.WAITING_DROP_ACK) {
+            this.dropLocationAck['skip'] = false;
+            this.dropLocationAck['given'] = true;
+            clearInterval(this.dropLocationAck['timerRef']);
+        }
+        else if(this.currentState === RobotState.WAITING_PICK_ACK) {
+            this.pickLocationAck['skip'] = false;
+            this.pickLocationAck['given'] = true;
+            clearInterval(this.pickLocationAck['timerRef']);
+        }
+        else {
+            this.print.log('Some other value is being passed at the time of Waiting ACK');
+        }
+    }
+
+    skipAckowledgement() {
+        if(this.currentState === RobotState.WAITING_DROP_ACK) {
+            this.dropLocationAck['skip'] = true;
+            clearInterval(this.dropLocationAck['timerRef']);
+        }
+        else if(this.currentState === RobotState.WAITING_PICK_ACK) {
+            this.pickLocationAck['skip'] = true;
+            clearInterval(this.pickLocationAck['timerRef']);
+        }
+        else {
+            this.print.log('Some other value is being passed at the time of Waiting ACK');
+        }
+    }
+
+    skipTask() {
+        if(!this.isTaskSkipped) {
+            this.skippedTaskList[this.liveData?.currentNode?.current] = this.createdTaskList[this.liveData?.currentNode?.current]
+        }
+        this.createdTaskList[this.liveData?.currentNode?.current] = undefined;
+        this.ss.setItem('_taskList', this.createdTaskList);
+        this.renderRacks();
+        this.setState(RobotState.MOVE_NEXT_DROP);
+    }
+
+    // ===================================================================================================
+    // Localisation node - Localise Robot
+    // ===================================================================================================
+
+    /**
+     * Used to Initialize the robot, when it is not localized
+     */
+    localizeRobot() {
+        this.isLocaliseDialogOpen = true;
+        this.localisationScore = 0;
+        this.api.post('navitrol/initialize', {id: this.configuration.nodes.localizeNode}).subscribe({
+            next: (response:any) => {
+                this.localisationScore = 0;
+                this.print.log('Fetched Localisation Score', this.localisationScore);
+                this.print.log('Initialize API Response', response);
+                this.localisationStatus = this.liveData.localisation.code
+                setTimeout(()=> {
+                    const incrementer = setInterval(()=>{
+                        if(this.localisationScore >= this.liveData.localisation.score) {
+                            clearInterval(incrementer);
+                            return
+                        }
+                        this.localisationScore+=1;
+                    },50)
+                }, 500)
+            },
+            error: (error:any) => {
+                this.print.error('Error happened while fetching data from the localisation', error);
+            }
+        })
+    }
+
+    /**
+     * Used to close the Initialize dialog
+     */
+    closeLocalize() {
+        this.isLocaliseDialogOpen = false;
+        this.localisationScore = 0;
+    }
+
+    // ===================================================================================================
+    // CRUD Action
+    // 1. Delete entry - deleteAction()
+    // 2. Open the requried taks for the racks - sendRackID()
+    // ===================================================================================================
+
+    /**
+     * Used to delete an task that is assigned to rack
+     */
+    deleteAction() {
+        // Actual format
+        // {
+        //    <location_number> : <rack_ids>[]
+        // }
+        this.print.log(this.selectedRack)
+        this.createdTaskList[this.selectedRack.dropLocation] = this.createdTaskList[this.selectedRack.dropLocation].filter((rack:number)=> rack !== this.selectedRack.id);
+
+        this.print.log('After Deleted Rack', this.createdTaskList);
+        this.ss.setItem('_taskList', this.createdTaskList);
+        this.isDeleteAction = false;
+        this.selectedRack = {};
+        this.renderRacks();
+    }
+
+    /**
+     * Used to manage the requried action from the UI for rack selection and task creation
+     * @param rack : rack from the list of racks
+     * @returns
+     */
+    sendRackID(rack:any) {
+        if(rack.isLoaded) {
+            this.isDeleteAction = !this.isTaskListSent;
+            this.isUnloadAction = this.isTaskListSent && this.liveData?.currentNode?.status === 13 && this.liveData?.currentNode?.current === +rack.dropLocation;
+            this.selectedRack = rack;
+            this.print.log('Rack Selected', rack, this.liveData?.currentNode?.current, rack.dropLocation)
+            return;
+        }
+
+        this.ss.setItem('_taskList', this.createdTaskList)
+        if(!this.isTaskListSent) {
+            this.router.navigate(['/rack-select'], {
+                queryParams: {id: rack.id}
+            })
+        }
+    }
+
+    /**
+     * Used to check that the skip pick up button should be visible or not
+     * @returns Boolean
+     */
+    isSkipPickButtonVisible():boolean {
+        const pickNodeListLen = this.configuration?.nodes.pickNode.length;
+        // return this.pickLocationVisitedCount !== this.getPickNodeListLen() && this.liveData?.currentNode?.current !== this.configuration?.nodes?.pickNode[pickNodeListLen-1];
+        console.log(this.pickLocationVisitedCount , this.getPickNodeListLen())
+        return this.pickLocationVisitedCount !== this.getPickNodeListLen();
+    }
+
+    /**
+     * Used to Acknowledge that the charger is disconnected and Acknowledged
+     * @returns boolean
+     */
+    async isChargeCompleteAck() {
+        if(await this.isChargerConnected()) {
+            this.print.log('Charger is not Disconnected');
+            return false
+        }
+        this.setState(RobotState.CHARGING_COMPLETE_ACK);
+        await this.stateMachine(this.liveData);
+        return true
+    }
+
+    /**
+     * Used to get the length of the list
+     *
+     * If the len is 1, it returns 1 and if the length is not 1, it returns len-1
+     * @returns number
+     */
+    private getPickNodeListLen():number {
+        const pickNodes = this.configuration?.nodes?.pickNode;
+        if(pickNodes.length === 1) {
+            return 1
+        }
+        else {
+            return pickNodes.length
+        }
+    }
+
+    // ===================================================================================================
+    // Conditional Based color function
+    // ===================================================================================================
+
+    batteryIndicatorColor(value:number) {
+        if(value >= 31) return colors.status.green;
+        else if(value >=16) return colors.status.yellow;
+        else return colors.status.red;
+    }
+
+    localisationScoreColor(value:number) {
+        if(value >= 70) return colors.status.green;
+        else if(value >=40) return colors.status.yellow;
+        else return colors.status.red;
+    }
+
+    // ===================================================================================================
+    // Helper Functions
+    // ===================================================================================================
+
+    /**
+     * Used to check that the task list is empty or not
+     * @param list : Task List
+     * @returns boolean
+     */
+    private isTaskListEmpty(list:any):boolean {
+        const racks = Object.values(list);
+        let flag = 0;
+
+        racks.forEach((rack:any) => {
+            if(rack.length !== 0) {
+                flag+=1;
+            }
+        })
+        return flag === 0
+    }
+
+    /**
+     * Used to check whether the robot reached drop location or not
+     * @param data : liveData
+     * @returns boolean
+     */
+    private isReachedDropLocation(data:any): boolean {
+        const list = [...this.configuration?.nodes?.pickNode, this.configuration?.nodes?.chargingNode]
+        return !list.includes(data?.currentNode?.current) && data?.currentNode?.status === 13
+    }
+
+    /**
+     * Used to check whether the robot reached pick location
+     * @param data : liveData
+     * @returns boolean
+     */
+    private isReachedPickLocation(data:any): boolean {
+        return this.configuration?.nodes?.pickNode.includes(data?.currentNode?.current) && data.currentNode?.status === 13
+    }
+
+    /**
+     * Used to check whether the robot reached Charge location
+     * @param data : liveData
+     * @returns boolean
+     */
+    private isReachedChargeLocation(data:any): boolean {
+        return data?.currentNode?.current === this.configuration?.nodes?.chargingNode && data.currentNode?.status === 13
+    }
+
+    /**
+     * Used to check whether the robot needs to be charged
+     * @param data : liveData
+     * @returns boolean
+     */
+    private isBatteryNeedsCharge(data:any):boolean {
+        return data?.battery <= this.configuration?.battery?.min && this.isTaskListEmpty(this.createdTaskList)
+    }
+
+    /**
+     * Used to unload the item and check whether the all items in that location is unloaded
+     * @param locationId : rack ID
+     * @returns boolean
+     */
+    private isAllUnloaded(locationId:number):boolean {
+        this.createdTaskList[this.selectedRack.dropLocation] = this.createdTaskList[this.selectedRack.dropLocation].filter((rack:number)=> rack !== this.selectedRack.id);
+        this.ss.setItem('_taskList', this.createdTaskList);
+        this.renderRacks();
+        if(this.createdTaskList[this.selectedRack.dropLocation].length === 0) {
+            return true
+        }
+        return false
+    }
+
+    /**
+     * Used to check whether the robot is connected to charger and response is given when the robot started charging
+     * @returns boolean
+     */
+    private isChargerConnected():Promise<boolean> {
+        return new Promise((resolve, reject)=> {
+            this.api.get('navitrol/charging-status', {}).subscribe({
+                next: (response:any) => {
+                    resolve(response.data === 1 ? true : false);
+                },
+                error: (error:any) => {
+                    this.print.error('Error Happened while fetching locations in ract-select => ',error);
+                    resolve(false);
+                }
+            })
+        })
+    }
+
+    /**
+     * Used to get the last value from the pickNode (Deprecated)!!
+     * @returns : number
+     */
+    private findLastLocationInPick():number {
+        const pickNodes = this.configuration?.nodes?.pickNode.slice();
+        return +pickNodes.pop();
+    }
+
+    /**
+     * Used to get the task list from the Storage and it is in raw format
+     * @returns raw task list
+     */
+    private fetchTaskListFromSS():any {
+        const tasks = this.ss.getItem('_taskList')
+
+        if(tasks === undefined || tasks === null) {
+            return {}
+        }
+        else {
+            return tasks
+        }
+    }
+
+    /**
+     * Used to seperate the valid location ID from the taskList
+     * @param list : taskList-any
+     * @returns number[] - List of tasks from the task list
+     */
+    private getAllTheLocationsFromRawData(list:any):number[] {
+        this.createdTaskList = this.fetchTaskListFromSS();
+        const keys = Object.keys(this.createdTaskList);
+        let tempTaskList = [];
+
+        for(let key in keys) {
+            if(this.createdTaskList[keys[key]].length !== 0) {
+                tempTaskList.push(+keys[key]);
+            }
+        }
+        return tempTaskList
+    }
+
+    /**
+    * Used to check whether the robot is fully charged
+    * @param data: liveData
+    * @returns boolean
+    * @file  Use this in to bring the acknowledgement button in charging screen and press the button to change state to RobotState.CHARGING_COMPLETE_ACK
+    */
+    isBatteryFullyCharged(data:any): boolean {
+        return data?.battery >= this.configuration?.battery?.max
+    }
+
+    /**
+     * Used to check for skipped task
+     *
+     * True - it is created and sent to the robot
+     *
+     * False - If there is no skipped task
+     * @returns boolean
+     */
+    private checkForSkippedTask(): boolean {
+        if(this.isTaskListEmpty(this.skippedTaskList)) {
+            return false
+        }
+        else {
+            this.createdTaskList = this.skippedTaskList;
+            this.skippedTaskList = {};
+            this.ss.setItem('_taskList', this.createdTaskList);
+            this.taskList = this.getAllTheLocationsFromRawData(this.createdTaskList);
+            return true
+        }
+    }
+}

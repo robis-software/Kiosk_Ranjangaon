@@ -4,7 +4,7 @@ export const routes: Routes = [
   {
     path: '',
     title: 'Dashboard | KIOSK',
-    loadComponent: async() => await import("./Sections/dashboard/dashboard.component").then(c => c.DashboardComponent)
+    loadComponent: async() => await import("./Sections/dashboard-state-mission/dashboard.component").then(c => c.DashboardComponent)
   },
   {
     path: 'rack-select',
