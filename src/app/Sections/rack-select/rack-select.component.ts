@@ -36,8 +36,8 @@ export class RackSelectComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.activeRoute.queryParamMap.subscribe((param:any) => {
             this.rackId = param.get('id');
-            // this.fetchLocations();
-            this.locations = [1,2,3,4,5,6];
+            this.fetchLocations();
+            // this.locations = [1,2,3,4,5,6];
             this.taskList = this.ss.getItem('_taskList');
         })
     }
