@@ -67,13 +67,14 @@ export class RackSelectComponent implements OnInit, OnDestroy {
 
         // Add charging node to the ignorance list
         ignoredLocations.push(this.configuration?.nodes?.chargingNode);
+        ignoredLocations.push(this.configuration?.nodes?.homeNode);
 
         return ignoredLocations;
 
     }
 
     private setPickPoint() {
-        this.api.post('navitrol/set-pick-location', {id: this.configuration.nodes.pickNode[0]}).subscribe({
+        this.api.post('navitrol/set-pick-location', {id: this.configuration?.nodes?.homeNode}).subscribe({
             next: (response:any) => {
                 this.print.log('Pick Location Set to the robot!!', response);
             },

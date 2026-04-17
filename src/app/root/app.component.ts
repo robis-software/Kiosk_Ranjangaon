@@ -20,6 +20,7 @@ import { Router } from '@angular/router';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
+
 export class AppComponent implements OnInit {
 
   isScreenSaver:boolean = true; //Change to true
@@ -62,15 +63,12 @@ export class AppComponent implements OnInit {
 
             if(this.configuration?.battery.min > this.liveData?.battery) {
                 this.isBatteryLow = true;
-                this.chargingTaskAPI();
             }
         });
     }
 
     startTimer() {
-        this.print.log('Screen Saver Enabled!');
         const duration = this.timeInMintes * 60 * 1000;
-        this.print.log('Screen Out Time',duration);
         this.timeOut = setTimeout(()=> {
             this.isScreenSaver = true;
         }, duration);
@@ -78,7 +76,6 @@ export class AppComponent implements OnInit {
 
     resetTimer() {
         clearTimeout(this.timeOut);
-        this.print.log('Screen Saver Disabled!');
         this.isScreenSaver = false;
         this.startTimer();
     }
@@ -97,7 +94,6 @@ export class AppComponent implements OnInit {
 
         if(isExists) {
             this.configuration = isExists;
-            this.print.log('Configuration Already Exists!');
             return;
         }
 
@@ -113,9 +109,5 @@ export class AppComponent implements OnInit {
                 this.print.error('Error happened while fetching data from the Configuration', error);
             }
         });
-    }
-
-    chargingTaskAPI() {
-        this.print.log('Charging Station Task is sent!!');
     }
 }

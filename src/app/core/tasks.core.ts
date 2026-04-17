@@ -29,9 +29,10 @@ class TasksCore {
 
     completeTask(id:number | string):Promise<boolean> {
         return new Promise((resolve, reject) => {
-            this.api.post('navitrol/complete-task', {}).subscribe({
+            this.api.post('navitrol/complete-task', {id}).subscribe({
                 next: (response:any) => {
                     this.print.log(`${this.taskFor} task completed in current Node!!`, response);
+                    this.print.log(`${this.taskFor} task completed at Location => ${id}`);
                     this.logs.send(200, `${this.taskFor} task completed at Location => ${id}`, '');
                     resolve(true)
                 },

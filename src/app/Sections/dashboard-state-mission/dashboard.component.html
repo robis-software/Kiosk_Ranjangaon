@@ -50,10 +50,10 @@
         </div>
 
         <div class="flex items-center justify-end w-full h-max gap-3">
-            <button *ngIf="isTaskPresent()" (click)="sendTaskToTheRobot()" class="size-[85px] rounded-[6px] bg-status-green flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
+            <button *ngIf="isTaskPresent()" (click)="setStateFromUI(robotState.TASK_READY)" class="size-[85px] rounded-[6px] bg-status-green flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
                 Start
             </button>
-            <button *ngIf="isSkipPickButtonVisible() && taskList.length !== 6" (click)="skipPickLocation()" class="size-[85px] rounded-[6px] bg-lavender flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
+            <button (click)="skipPickLocation()" class="size-[85px] rounded-[6px] bg-lavender flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
                 <ranjangaon-icons [icon]="'skip'" [size]="32" [color]="'#FFF'"></ranjangaon-icons>
             </button>
             <button (click)="rotateInplace()" class="size-[85px] rounded-[6px] bg-[#263238] flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
@@ -206,7 +206,7 @@
                 Cancel
             </button>
 
-            <button (click)="currentState = robotState.DROP_ACK;" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button (click)="setStateFromUI(robotState.DROP_ACK)" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 Unload
             </button>
         </div>
@@ -214,7 +214,7 @@
 </fleet-popup>
 
 <!-- Block UI until Reaches home -->
-<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.pickNode[0] && liveData?.currentNode?.status !== 13" [title]="'Returning!!'" [isClose]="false">
+<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.homeNode && liveData?.currentNode?.status !== 13" [title]="'Returning!!'" [isClose]="false">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full py-12 h-max">
             <ranjangaon-icons [icon]="'home-location'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
@@ -229,7 +229,7 @@
     </div>
 </fleet-popup>
 
-<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode" [title]="'Charging Mode!!'" [isClose]="false">
+<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode && liveData?.currentNode?.status === 13 && (currentState === robotState.CHARGER_CONNECTED || currentState === robotState.CHARGING)" [title]="'Charging Mode!!'" [isClose]="false">
     <div class="w-full h-full">
         <div class="w-max h-[400px] overflow-hidden mt-8 flex items-center justify-center relative">
             <ranjangaon-circular-indicator [angle]="360" [size]="500" [color]="batteryIndicatorColor(liveData?.battery)" [data]="+liveData?.battery || 30" [rotate]="-90" >
@@ -306,5 +306,20 @@
                 Skip Task
             </button>
         </div>
+    </div>
+</fleet-popup>
+
+<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode && liveData?.currentNode?.status !== 13 && (currentState === robotState.CHARGING_REQUESTED || currentState === robotState.ARRIVED_CHARGE)" [isClose]="false" [title]="'Battery Low!!'">
+    <div class="flex flex-col items-start justify-start w-full h-max">
+        <div class="flex items-center justify-center w-full py-12 h-max">
+            <ranjangaon-icons [icon]="'lowBattery'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
+        </div>
+
+        <p class="text-[20px] mt-4 leading-[45px]">Battery level is low.</p>
+
+        <span class="w-full mt-6">
+            <p class="text-[22px] font-semibold text-primary">Note</p>
+            <p class="text-[20px] mt-1 leading-[45px]">The current task will continue. Once all tasks are completed, the robot will be automatically assigned to the charging station.</p>
+        </span>
     </div>
 </fleet-popup>
