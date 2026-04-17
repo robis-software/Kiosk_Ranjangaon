@@ -229,6 +229,7 @@
     </div>
 </fleet-popup>
 
+<!-- Robot Charging UI -->
 <fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode && liveData?.currentNode?.status === 13 && (currentState === robotState.CHARGER_CONNECTED || currentState === robotState.CHARGING)" [title]="'Charging Mode!!'" [isClose]="false">
     <div class="w-full h-full">
         <div class="w-max h-[400px] overflow-hidden mt-8 flex items-center justify-center relative">
@@ -309,7 +310,8 @@
     </div>
 </fleet-popup>
 
-<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode && liveData?.currentNode?.status !== 13 && (currentState === robotState.CHARGING_REQUESTED || currentState === robotState.ARRIVED_CHARGE)" [isClose]="false" [title]="'Battery Low!!'">
+<!-- Low Battery Alert UI -->
+<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode && liveData?.currentNode?.status !== 13 && (currentState === robotState.CHARGING_REQUESTED || currentState === robotState.ARRIVED_CHARGE || currentState === robotState.TASK_SENT)" [isClose]="false" [title]="'Battery Low!!'">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full py-12 h-max">
             <ranjangaon-icons [icon]="'lowBattery'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>

@@ -114,11 +114,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     pickLocationVisitedCount:number = -1;
     pickLocations:any = [];
 
-    // Charging Location Parameters
+    // Charging Location Parameters - Focus On this parameters and play
     charging:Record<string, any> = {
         reached: false,
         taskSent:false,
-        batteryMonitor: null,
         disconnectedAckGiven: false,
         powerConnected: false
     }
@@ -210,27 +209,31 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         // console.log("Pick Locations", this.pickLocations);
         this.pickLocations = this.ss.getItem('_pickLocation');
         console.log(this.pickLocations);
-        if(this.pickLocations && this.pickLocations.length !== 0) {
-            this.pickLocations = this.ss.getItem('_pickLocation');
-            this.print.log('Pick Location Already Exists =>', this.pickLocations);
-            this.isPickTaskSent = true;
-            this.isDropTaskSent = false;
-        }
-        else {
-            this.pickLocations = this.generatePickLocations();
-            this.print.log('Pick Location were generated =>', this.pickLocations);
-            this.ss.setItem('_pickLocation', this.pickLocations);
-            this.pickLocations = this.generatePickLocations();
-            this.sendPickTasksToRobot(this.pickLocations);
-            this.setRefencePoint();
-        }
+
+        // Commented this line to check that no auto pick location task is sent
+        // if(this.pickLocations && this.pickLocations.length !== 0) {
+        //     this.pickLocations = this.ss.getItem('_pickLocation');
+        //     this.print.log('Pick Location Already Exists =>', this.pickLocations);
+        //     this.isPickTaskSent = true;
+        //     this.isDropTaskSent = false;
+        // }
+        // else {
+        //     this.pickLocations = this.generatePickLocations();
+        //     this.print.log('Pick Location were generated =>', this.pickLocations);
+        //     this.ss.setItem('_pickLocation', this.pickLocations);
+        //     this.pickLocations = this.generatePickLocations();
+        //     this.sendPickTasksToRobot(this.pickLocations);
+        //     this.setRefencePoint();
+        // }
 
         this.subscription = this.liveStream.serverEvent$.subscribe(async(data:any) => {
             this.liveData = data;
             this.print.log(data?.currentNode);
             await this.stateMachine(data);
-            this.localisationScore = data?.localisation?.score
-            this.localisationStatus = data?.localisation?.code
+            this.localisationScore = data?.localisation?.score;
+            this.localisationStatus = data?.localisation?.error?.code;
+
+            console.log({score: this.localisationScore, status: this.localisationStatus});
         });
     }
 
@@ -260,7 +263,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.ss.setItem('_dropAck', this.dropLocationAck['given']);
                 this.ss.setItem('_pickAck', this.pickLocationAck['given']);
 
-                if(this.isBatteryFullyCharged(data) && this.charging['disconnectedAckGiven']) {
+                if(this.localisationScore === 207) {
+                    break;
+                }
+                else if(await this.isChargerConnected()) {
+                    this,this.setState(RobotState.CHARGER_CONNECTED);
+                }
+                else if(this.isBatteryFullyCharged(data) && this.charging['disconnectedAckGiven']) {
                     this.setState(
                         await this.taskAPI.createTask([nodes?.homeNode])
                         ? RobotState.TASK_SENT
