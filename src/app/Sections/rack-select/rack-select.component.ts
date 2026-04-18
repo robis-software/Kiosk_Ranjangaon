@@ -51,7 +51,8 @@ export class RackSelectComponent implements OnInit, OnDestroy {
                 this.setPickPoint();
             },
             error: (error:any) => {
-                this.print.error('Error Happened while fetching locations in ract-select => ',error)
+                this.print.error('Error Happened while fetching locations in ract-select => ',error);
+                this.locations = [];
             }
         })
     }

@@ -29,16 +29,7 @@ export class LiveStatusService {
             }
         })
 
-        // setInterval(() => {
-        //     this.apiCall();
-        // }, 1000);
     }
-
-    // private getData() {
-    //     this.liveStream.getStream((res:any) => {
-    //         this.liveStatus.next(res);
-    //     })
-    // }
 
     private apiCall() {
         this.api.get('test/monitor', {}).subscribe({
