@@ -56,15 +56,17 @@
         </div>
 
         <div class="flex items-center justify-end w-full h-max gap-5">
+            <button (click)="rotateInplace()" *ngIf="liveData?.currentNode?.status === 13" class="size-[110px] rounded-[6px] bg-[#263238] flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
+                <ranjangaon-icons [icon]="'turn'" [size]="40" [color]="'#FFF'"></ranjangaon-icons>
+                <!-- Rotate  -->
+            </button>
+
             <button *ngIf="getCurrentPickTaskLoationsLen() === 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[110px] rounded-[6px] bg-status-green flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
                 Start
             </button>
+            
             <button *ngIf="getCurrentPickTaskLoationsLen() !== 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[110px] rounded-[6px] bg-lavender flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
                 <ranjangaon-icons [icon]="'skip'" [size]="40" [color]="'#FFF'"></ranjangaon-icons>
-            </button>
-            <button (click)="rotateInplace()" class="size-[110px] rounded-[6px] bg-[#263238] flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
-                <ranjangaon-icons [icon]="'turn'" [size]="40" [color]="'#FFF'"></ranjangaon-icons>
-                <!-- Rotate  -->
             </button>
         </div>
     </div>

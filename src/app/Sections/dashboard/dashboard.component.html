@@ -49,16 +49,17 @@
             <!-- <button (click)="localizeRobot()" class="w-[150px] h-[65px] rounded-[6px] bg-lavender flex items-center justify-center text-white font-normal text-[20px]">Localise</button> -->
         </div>
 
+
+        <button *ngIf="!enableStartButton" (click)="rotateInplace()" class="size-[85px] rounded-[6px] bg-[#263238] flex items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
+            <ranjangaon-icons [icon]="'turn'" [size]="36" [color]="'#FFF'"></ranjangaon-icons>
+        </button>
+        
         <button *ngIf="enableStartButton && !isTaskListSent && currentPickLocation === configuration?.nodes?.pickNode.length - 1" (click)="sendTask()" class="w-[200px] h-[65px] rounded-[6px] bg-status-green flex items-center justify-center text-white font-normal text-[20px]">
             Start
         </button>
 
         <button *ngIf="enableStartButton && !isTaskListSent && currentPickLocation !== configuration?.nodes?.pickNode.length - 1" (click)="sendToNextPickLocation()" class="w-[300px] h-[65px] rounded-[6px] bg-lavender flex items-center justify-center text-white font-normal text-[20px]">
             Go to Next Location
-        </button>
-
-        <button *ngIf="!enableStartButton" (click)="rotateInplace()" class="size-[85px] rounded-[6px] bg-[#263238] flex items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
-            <ranjangaon-icons [icon]="'turn'" [size]="36" [color]="'#FFF'"></ranjangaon-icons>
         </button>
     </div>
 </div>
