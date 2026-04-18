@@ -2,7 +2,13 @@
     <div class="w-full h-[900px] mt-20 flex items-center justify-start flex-col">
         <div #rackContainer class="grid gap-4 w-[500px] h-[650px]">
             @for (rack of racksArray; track $index) {
-                <button (click)="sendRackID(rack)" *ngIf="rack" [ngClass]="{'bg-racks': !rack.isLoaded || isTaskListSent, 'bg-status-green': (rack.isLoaded && !isTaskListSent) || (liveData?.currentNode?.current === +rack.dropLocation && liveData?.currentNode?.status === 13 && dropLocationAck['given']), 'animate-pulse': (liveData?.currentNode?.current === +rack.dropLocation) && rack.isLoaded && dropLocationAck['given']}" class="flex items-center justify-center w-full h-full rounded-[12px] duration-100">
+                <button
+                    (click)="sendRackID(rack)"
+                    *ngIf="rack"
+                    [ngClass]="{
+                        'bg-racks': !rack.isLoaded || isTaskListSent,
+                        'bg-status-green': (rack.isLoaded && !isTaskListSent) || (liveData?.currentNode?.current === +rack.dropLocation && liveData?.currentNode?.status === 13 && dropLocationAck['given']),
+                        'animate-pulse': (liveData?.currentNode?.current === +rack.dropLocation) && rack.isLoaded && dropLocationAck['given'] && liveData?.currentNode?.status === 13}" class="flex items-center justify-center w-full h-full rounded-[12px] duration-100">
                     <ranjangaon-icons *ngIf="!rack.isLoaded" [icon]="'rack'" [size]="80" [color]="'#AFAFAF'"></ranjangaon-icons>
 
                     <!-- <div *ngIf="(rack.isLoaded && !isTaskListSent) || (liveData?.currentNode?.current === +rack.dropLocation && liveData?.currentNode?.status === 13 && isAcknowledgementGiven)" class="flex flex-col items-center justify-center gap-2 w-max h-max"> -->
@@ -50,10 +56,10 @@
         </div>
 
         <div class="flex items-center justify-end w-full h-max gap-3">
-            <button *ngIf="isTaskPresent()" (click)="setStateFromUI(robotState.TASK_READY)" class="size-[85px] rounded-[6px] bg-status-green flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
+            <button *ngIf="getCurrentPickTaskLoationsLen() === 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[85px] rounded-[6px] bg-status-green flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
                 Start
             </button>
-            <button (click)="skipPickLocation()" class="size-[85px] rounded-[6px] bg-lavender flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
+            <button *ngIf="getCurrentPickTaskLoationsLen() !== 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[85px] rounded-[6px] bg-lavender flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
                 <ranjangaon-icons [icon]="'skip'" [size]="32" [color]="'#FFF'"></ranjangaon-icons>
             </button>
             <button (click)="rotateInplace()" class="size-[85px] rounded-[6px] bg-[#263238] flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
@@ -245,14 +251,14 @@
         </div>
 
         <div *ngIf="currentState === robotState.CHARGING && liveData?.battery >= configuration?.battery.max" class="mt-4 animate-slideIn">
-            <p class="text-[20px] leading-[45px]">Tap Acknowledge to begin unloading the materials at this location.</p>
+            <p class="text-[20px] leading-[45px]">Charging completed, unplug the charger and Acknowledge.</p>
 
             <span class="w-full mt-6">
                 <p class="text-[22px] font-semibold text-primary">Note</p>
-                <p class="text-[20px] mt-1 leading-[45px]">If no acknowledgment is received within the given time, the system will skip unloading and proceed to the next destination automatically.</p>
+                <p class="text-[20px] mt-1 leading-[45px]">After Acknowledgement, Robot will be moving to its home location.</p>
             </span>
 
-            <button class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px] mt-16">
+            <button (click)="charging['disconnectedAckGiven'] = true; setStateFromUI(robotState.CHARGING_COMPLETE_ACK)" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px] mt-16">
                 Acknowledge
             </button>
         </div>
@@ -268,11 +274,11 @@
             <p class="text-[40px] text-primary font-medium">Sec</p>
         </div>
 
-        <p class="text-[20px] mt-4 leading-[45px]">Tap Acknowledge to begin unloading the materials at this location.</p>
+        <p class="text-[20px] mt-4 leading-[45px]">Tap Acknowledge to begin loading the materials at this location.</p>
 
         <span class="w-full mt-6">
             <p class="text-[22px] font-semibold text-primary">Note</p>
-            <p class="text-[20px] mt-1 leading-[45px]">If no acknowledgment is received within the given time, the system will skip unloading and proceed to the next destination automatically.</p>
+            <p class="text-[20px] mt-1 leading-[45px]">If no acknowledgment is received within the given time, the system will skip loading and proceed to the next destination automatically.</p>
         </span>
 
         <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
@@ -291,11 +297,11 @@
             <ranjangaon-icons [icon]="'skipTask'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
         </div>
 
-        <p class="text-[20px] mt-4 leading-[45px]">Are you sure to skip this task ?</p>
+        <p class="text-[20px] mt-4 leading-[45px]">Are you sure to skip this location ?</p>
 
         <span class="w-full mt-6">
             <p class="text-[22px] font-semibold text-primary">Note</p>
-            <p class="text-[20px] mt-1 leading-[45px]">if you press button, the task will be considered as completed and robot will move to next location for executing the task.</p>
+            <p class="text-[20px] mt-1 leading-[45px]">if you press button, the location will be considered as completed and move to the next destination</p>
         </span>
 
         <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
@@ -304,7 +310,7 @@
             </button>
 
             <button (click)="clearAcknowledgementTimer(); skipPickLocation();" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
-                Skip Task
+                Skip location
             </button>
         </div>
     </div>

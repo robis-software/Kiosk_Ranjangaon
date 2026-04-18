@@ -55,7 +55,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly chargeAPI!:TasksCore;
     private readonly taskAPI!:TasksCore;
 
-    private stateOfRobot = {
+    private readonly stateOfRobot = {
         0:  "IDLE", // 0
         1:  "TASK_READY", // 1
         2:  "TASK_SENT", // 2
@@ -73,7 +73,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         14: "CHARGING", // 14
         15: "CHARGING_COMPLETE_ACK" // 15
     }
-
 
     // General Parameters
     colors:any;
@@ -115,11 +114,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     pickLocations:any = [];
 
     // Charging Location Parameters - Focus On this parameters and play
-    charging:Record<string, any> = {
+      charging:Record<string, any> = {
         reached: false,
         taskSent:false,
         disconnectedAckGiven: false,
-        powerConnected: false
     }
 
     isPickTaskSent:boolean = false;
@@ -211,20 +209,20 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         console.log(this.pickLocations);
 
         // Commented this line to check that no auto pick location task is sent
-        // if(this.pickLocations && this.pickLocations.length !== 0) {
-        //     this.pickLocations = this.ss.getItem('_pickLocation');
-        //     this.print.log('Pick Location Already Exists =>', this.pickLocations);
-        //     this.isPickTaskSent = true;
-        //     this.isDropTaskSent = false;
-        // }
-        // else {
-        //     this.pickLocations = this.generatePickLocations();
-        //     this.print.log('Pick Location were generated =>', this.pickLocations);
-        //     this.ss.setItem('_pickLocation', this.pickLocations);
-        //     this.pickLocations = this.generatePickLocations();
-        //     this.sendPickTasksToRobot(this.pickLocations);
-        //     this.setRefencePoint();
-        // }
+        if(this.pickLocations && this.pickLocations.length !== 0) {
+            this.pickLocations = this.ss.getItem('_pickLocation');
+            this.print.log('Pick Location Already Exists =>', this.pickLocations);
+            this.isPickTaskSent = true;
+            this.isDropTaskSent = false;
+        }
+        else {
+            this.pickLocations = this.generatePickLocations();
+            this.print.log('Pick Location were generated =>', this.pickLocations);
+            this.ss.setItem('_pickLocation', this.pickLocations);
+            this.pickLocations = this.generatePickLocations();
+            this.sendPickTasksToRobot(this.pickLocations);
+            this.setRefencePoint();
+        }
 
         this.subscription = this.liveStream.serverEvent$.subscribe(async(data:any) => {
             this.liveData = data;
@@ -233,7 +231,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             this.localisationScore = data?.localisation?.score;
             this.localisationStatus = data?.localisation?.error?.code;
 
-            console.log({score: this.localisationScore, status: this.localisationStatus});
+            this.print.log({score: this.localisationScore, status: this.localisationStatus});
         });
     }
 
@@ -263,7 +261,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.ss.setItem('_dropAck', this.dropLocationAck['given']);
                 this.ss.setItem('_pickAck', this.pickLocationAck['given']);
 
-                if(this.localisationScore === 207) {
+                if(this.localisationStatus === 207) {
                     break;
                 }
                 else if(await this.isChargerConnected()) {
@@ -293,6 +291,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             case RobotState.TASK_READY:
                 if(await this.taskAPI.createTask(this.taskList)) {
                     this.setState(RobotState.TASK_SENT);
+                    this.charging['taskSent'] = false;
                     break;
                 }
                 this.print.log('Task List not sent to robot!')
@@ -302,6 +301,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             case RobotState.CHARGING_REQUESTED:
                 if(await this.chargeAPI.createTask([nodes?.chargingNode])) {
                     this.setState(RobotState.TASK_SENT);
+                    this.charging['taskSent'] = true;
                 }
                 else {
                     this.setState(RobotState.IDLE);
@@ -312,10 +312,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 if(this.isReachedDropLocation(data)) {
                     this.setState(RobotState.ARRIVED_DROP);
                     this.charging['reached'] = false;
+                    this.dropLocationAck['given'] = false;
+                    this.ss.setItem('_dropAck', this.dropLocationAck['given']);
                 }
                 else if(this.isReachedPickLocation(data)) {
                     this.setState(RobotState.ARRIVED_PICK);
                     this.charging['reached'] = false;
+                    this.pickLocationAck['given'] = false;
+                    this.ss.setItem('_pickAck', this.pickLocationAck['given']);
+
                 }
                 else if(this.isReachedChargeLocation(data) && this.type === 'IDLE') {
                     this.setState(RobotState.ARRIVED_CHARGE);
@@ -347,9 +352,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             case RobotState.ARRIVED_PICK:
                 const condition = data?.currentNode?.current === nodes?.homeNode;
                 if(!condition) {
-                    this.pickLocationAck['given'] = false;
                     this.print.log('Pick location ACK is Set False', this.pickLocationAck['given']);
-                    this.ss.setItem('_pickAck', this.pickLocationAck['given']);
                     this.setState(RobotState.WAITING_PICK_ACK);
                     this.startAcknowledgementTimer();
                     this.setType('PICK');
@@ -394,8 +397,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 break
 
             case RobotState.ARRIVED_DROP:
-                this.dropLocationAck['given'] = false;
-                this.ss.setItem('_dropAck', this.dropLocationAck['given']);
                 console.log('Drop location ACK is Set False', this.dropLocationAck['given']);
                 this.setState(RobotState.WAITING_DROP_ACK);
                 this.startAcknowledgementTimer();
@@ -481,6 +482,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
             case RobotState.ARRIVED_CHARGE:
                 if(await this.chargeAPI.completeTask(this.configuration?.nodes?.chargingNode)) {
+                    this.charging['reached'] = true;
                     this.setState(RobotState.CHARGER_CONNECTED);
                 }
                 this.charging['disconnectedAckGiven'] = false
@@ -502,6 +504,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
             case RobotState.CHARGING_COMPLETE_ACK:
                 if(await this.taskAPI.createTask([nodes?.homeNode])) {
+                    this.isPickTaskSent = false;
+                    this.isDropTaskSent = false;
+                    this.charging['reached'] = false;
+                    this.charging['taskSent'] = false;
+
                     this.setState(RobotState.TASK_SENT);
                     this.setType('IDLE');
                 }
@@ -591,9 +598,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     async skipPickLocation() {
         // this.pickLocationVisitedCount = this.ss.getItem('_pickLocationVisitedCount') || 1;
         this.pickLocations = this.ss.getItem('_pickLocation')
-        const pickListLen = this.getPickNodeListLen()
-        console.log('Skip Log Function Triggered', pickListLen, this.generatePickLocations())
+        // const pickListLen = this.getPickNodeListLen()
+        // console.log('Skip Log Function Triggered', pickListLen, this.generatePickLocations())
         // if(this.pickLocationVisitedCount === pickListLen) {
+        this.print.log('Skip Location Triggered')
         this.setState(RobotState.MOVE_NEXT_PICK);
         console.log('Current Robot State =>',this.stateOfRobot[this.currentState])
     }
@@ -795,14 +803,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     sendRackID(rack:any) {
         if(rack.isLoaded) {
             this.isDeleteAction = this.type === 'IDLE' || this.type === 'PICK';
-            this.isUnloadAction = this.type === 'DROP' && this.liveData?.currentNode?.status === 13 && this.liveData?.currentNode?.current === +rack.dropLocation;
+            this.isUnloadAction = this.type === 'DROP' && this.liveData?.currentNode?.status === 13 && this.liveData?.currentNode?.current === Number(rack.dropLocation);
             this.selectedRack = rack;
             this.print.log('Rack Selected', rack, this.liveData?.currentNode?.current, rack.dropLocation)
             return;
         }
 
         this.ss.setItem('_taskList', this.createdTaskList)
-        if(!this.isTaskListSent) {
+        if(this.type === 'PICK' || this.type === 'IDLE') {
             this.router.navigate(['/rack-select'], {
                 queryParams: {id: rack.id}
             })
@@ -1041,5 +1049,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.logs.send(200, `Refernce point not set => ${id}`, 'Pick Location API Failure');
             }
         })
+    }
+
+    // ===================================================================================================
+    // UI based Helper functions
+    // ===================================================================================================
+    getCurrentPickTaskLoationsLen() {
+        const pickLocations:number[] = this.ss.getItem('_pickLocation') ?? [];
+        return pickLocations.length;
     }
 }
