@@ -53,12 +53,10 @@ export class AppComponent implements OnInit {
     private monitorStatus() {
         this.liveStream.serverEvent$.subscribe((data:any) => {
             this.liveData = data;
-            // this.print.log('Live-status=> \n', data);
             const isEmpty = !data || Object.keys(data).length === 0;
             const isNotLive = data?.live === false;
-            // if(data === null || data === undefined || JSON.stringify(data) === '{}' || data.live === false) {
             if((isEmpty || isNotLive) && this.router.url !== '/disconnected') {
-                // this.router.navigateByUrl('/disconnected');
+                this.router.navigateByUrl('/disconnected');
             }
 
             if(this.configuration?.battery.min > this.liveData?.battery) {
@@ -82,8 +80,8 @@ export class AppComponent implements OnInit {
 
     @HostListener('document:touchstart')
     @HostListener('document:touchmove')
-    //   @HostListener('document:touchend')
-    //   @HostListener('document:touchcancel')
+    @HostListener('document:touchend')
+    @HostListener('document:touchcancel')
     @HostListener('document:click')
     handleUserActivity() {
         this.resetTimer();

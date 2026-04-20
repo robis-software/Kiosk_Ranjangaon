@@ -107,6 +107,6 @@ export class RackSelectComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
-        // this.locationDetailsSubscription.unsubscribe()
+        this.locationDetailsSubscription.unsubscribe()
     }
 }

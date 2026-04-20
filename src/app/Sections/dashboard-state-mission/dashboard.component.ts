@@ -9,7 +9,7 @@ import { CircularIndicatorComponent } from "../../Components/circular-indicator/
 import { Router } from '@angular/router';
 import { PopupComponent } from "../../Components/popup/popup.component";
 import { SseService } from '../../Services/sse.service';
-import { Subscription } from 'rxjs';
+import { config, Subscription } from 'rxjs';
 import { LogsService } from '../../Services/logs.service';
 import TasksCore from '../../core/tasks.core';
 
@@ -124,9 +124,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     isDropTaskSent:boolean = false;
 
     constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly router:Router, private readonly liveStream:SseService, private readonly cdf:ChangeDetectorRef, private readonly logs:LogsService) {
-        this.chargeAPI = new TasksCore(this.api, this.logs, 'charge');
-        this.pickAPI = new TasksCore(this.api, this.logs, 'pick');
-        this.taskAPI = new TasksCore(this.api, this.logs, 'drop');
+        this.chargeAPI = new TasksCore(this.api, this.logs, 'Charge');
+        this.pickAPI = new TasksCore(this.api, this.logs, 'Pick');
+        this.taskAPI = new TasksCore(this.api, this.logs, 'Drop');
     }
 
 
@@ -138,7 +138,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.colors = colors;
         this.print = new Print();
         this.currentState = this.ss.getItem('_currentState') | RobotState.IDLE;
-        this.configuration = this.ss.getItem('_config');
+        this.configuration = this.ss.getItem('_config') || null;
+
+        console.log(this.configuration && true);
+
+        if(!this.configuration) {
+            this.print.log('No Configuration is there to use!')
+            return
+        }
+
         this.monitorStatus();
         this.ss.removeItem("_authenication");
         this.createdTaskList = this.fetchTaskListFromSS();
@@ -225,11 +233,17 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
 
         this.subscription = this.liveStream.serverEvent$.subscribe(async(data:any) => {
-            this.liveData = data;
-            this.print.log(data?.currentNode);
+            if(data?.live) {
+                this.liveData = data;
+                this.print.log(data?.currentNode);
+            }
+            else {
+                this.print.log('Server Offline and no data is coming form navitrol')
+            }
             await this.stateMachine(data);
-            this.localisationScore = data?.localisation?.score;
+            // this.localisationScore = data?.localisation?.score;
             this.localisationStatus = data?.localisation?.error?.code;
+            // this.localisationStatus = Number(data?.localisation?.error?.code);
 
             this.print.log({score: this.localisationScore, status: this.localisationStatus});
         });
@@ -620,7 +634,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private generatePickLocations():number[] {
         let nodes:any = this.configuration?.nodes;
         let pickTaskList = [...nodes?.pickNode, nodes?.homeNode];
-        console.log("Len of pick task => ",pickTaskList.length);
         return pickTaskList
     }
 
