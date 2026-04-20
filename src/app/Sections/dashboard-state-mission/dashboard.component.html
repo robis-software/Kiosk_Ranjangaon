@@ -55,7 +55,7 @@
             <!-- <button (click)="localizeRobot()" class="w-[150px] h-[65px] rounded-[6px] bg-lavender flex items-center justify-center text-white font-normal text-[20px]">Localise</button> -->
         </div>
 
-        <div class="flex items-center justify-end w-full h-max gap-5">
+        <div class="flex items-center justify-end w-full gap-5 h-max">
             <button (click)="rotateInplace()" *ngIf="liveData?.currentNode?.status === 13" class="size-[110px] rounded-[6px] bg-[#263238] flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
                 <ranjangaon-icons [icon]="'turn'" [size]="40" [color]="'#FFF'"></ranjangaon-icons>
                 <!-- Rotate  -->
@@ -64,7 +64,7 @@
             <button *ngIf="getCurrentPickTaskLoationsLen() === 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[110px] rounded-[6px] bg-status-green flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
                 Start
             </button>
-            
+
             <button *ngIf="getCurrentPickTaskLoationsLen() !== 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[110px] rounded-[6px] bg-lavender flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
                 <ranjangaon-icons [icon]="'skip'" [size]="40" [color]="'#FFF'"></ranjangaon-icons>
             </button>
@@ -320,6 +320,22 @@
 
 <!-- Low Battery Alert UI -->
 <fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode && liveData?.currentNode?.status !== 13 && (currentState === robotState.CHARGING_REQUESTED || currentState === robotState.ARRIVED_CHARGE || currentState === robotState.TASK_SENT)" [isClose]="false" [title]="'Battery Low!!'">
+    <div class="flex flex-col items-start justify-start w-full h-max">
+        <div class="flex items-center justify-center w-full py-12 h-max">
+            <ranjangaon-icons [icon]="'lowBattery'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
+        </div>
+
+        <p class="text-[20px] mt-4 leading-[45px]">Battery level is low.</p>
+
+        <span class="w-full mt-6">
+            <p class="text-[22px] font-semibold text-primary">Note</p>
+            <p class="text-[20px] mt-1 leading-[45px]">The current task will continue. Once all tasks are completed, the robot will be automatically assigned to the charging station.</p>
+        </span>
+    </div>
+</fleet-popup>
+
+<!-- No configuration alert banner -->
+<fleet-popup *ngIf="!this.configuration" [isClose]="false" [title]="'Not Found!!'">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full py-12 h-max">
             <ranjangaon-icons [icon]="'lowBattery'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>

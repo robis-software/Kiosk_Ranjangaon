@@ -82,8 +82,8 @@ export class AppComponent implements OnInit {
 
     @HostListener('document:touchstart')
     @HostListener('document:touchmove')
-    //   @HostListener('document:touchend')
-    //   @HostListener('document:touchcancel')
+    @HostListener('document:touchend')
+    @HostListener('document:touchcancel')
     @HostListener('document:click')
     handleUserActivity() {
         this.resetTimer();

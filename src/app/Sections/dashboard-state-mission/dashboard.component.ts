@@ -120,8 +120,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         disconnectedAckGiven: false,
     }
 
+    // Task List sent boolean
     isPickTaskSent:boolean = false;
     isDropTaskSent:boolean = false;
+
+    // Transitions
+    transition = {
+        prevNode: 0,
+        currentNode: 0
+    }
 
     constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly router:Router, private readonly liveStream:SseService, private readonly cdf:ChangeDetectorRef, private readonly logs:LogsService) {
         this.chargeAPI = new TasksCore(this.api, this.logs, 'charge');
@@ -204,11 +211,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     // ===================================================================================================
 
     private monitorStatus() {
-        // console.log("Pick Locations", this.pickLocations);
         this.pickLocations = this.ss.getItem('_pickLocation');
         console.log(this.pickLocations);
 
-        // Commented this line to check that no auto pick location task is sent
+        // This logic initially send the pick tasks to the robot, but it need to be implemented in IDLE state - For better understanding and better code quality
         if(this.pickLocations && this.pickLocations.length !== 0) {
             this.pickLocations = this.ss.getItem('_pickLocation');
             this.print.log('Pick Location Already Exists =>', this.pickLocations);
@@ -230,8 +236,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             await this.stateMachine(data);
             this.localisationScore = data?.localisation?.score;
             this.localisationStatus = data?.localisation?.error?.code;
-
-            this.print.log({score: this.localisationScore, status: this.localisationStatus});
+            this.taskTransition(data);
         });
     }
 
@@ -265,7 +270,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     break;
                 }
                 else if(await this.isChargerConnected()) {
-                    this,this.setState(RobotState.CHARGER_CONNECTED);
+                    this.setState(RobotState.CHARGER_CONNECTED);
                 }
                 else if(this.isBatteryFullyCharged(data) && this.charging['disconnectedAckGiven']) {
                     this.setState(
@@ -1057,5 +1062,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     getCurrentPickTaskLoationsLen() {
         const pickLocations:number[] = this.ss.getItem('_pickLocation') ?? [];
         return pickLocations.length;
+    }
+
+    taskTransition(data:any){
+        if(data?.currentNode?.current !== this.transition['currentNode']) {
+            const temp = {...this.transition};
+            this.transition['prevNode'] = temp['currentNode'];
+            this.transition['currentNode'] = data?.currentNode?.current;
+        }
     }
 }
