@@ -55,14 +55,14 @@
             <!-- <button (click)="localizeRobot()" class="w-[150px] h-[65px] rounded-[6px] bg-lavender flex items-center justify-center text-white font-normal text-[20px]">Localise</button> -->
         </div>
 
-        <div class="flex items-center justify-end w-full h-max gap-3">
+        <div class="flex items-center justify-end w-full gap-3 h-max">
             <button *ngIf="getCurrentPickTaskLoationsLen() === 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[110px] rounded-[6px] bg-status-green flex gap-1 flex-col items-center justify-center text-white font-normal text-[22px] animate-slideFromDown">
                 Start
             </button>
             <button *ngIf="getCurrentPickTaskLoationsLen() !== 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[110px] rounded-[6px] bg-lavender flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
                 <ranjangaon-icons [icon]="'skip'" [size]="40" [color]="'#FFF'"></ranjangaon-icons>
             </button>
-            <button (click)="rotateInplace()" *ngIf="liveData?.currentNode?.current === 13" class="size-[110px] rounded-[6px] bg-[#263238] flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
+            <button (click)="rotateInplace()" *ngIf="liveData?.currentNode?.current === 13 || liveData?.currentNode?.current === configuration?.nodes?.homeNode" class="size-[110px] rounded-[6px] bg-[#263238] flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
                 <ranjangaon-icons [icon]="'turn'" [size]="40" [color]="'#FFF'"></ranjangaon-icons>
                 <!-- Rotate  -->
             </button>
@@ -77,11 +77,11 @@
             <ranjangaon-icons [icon]="'delete'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
         </div>
 
-        <p class="text-[20px] mt-4 leading-[45px]">Are you sure to delete this action ?</p>
+        <p class="text-[20px] mt-4 leading-[45px]">Are you sure you want to delete this action?</p>
 
         <span class="w-full mt-6">
             <p class="text-[22px] font-semibold text-primary">Note</p>
-            <p class="text-[20px] mt-1 leading-[45px]">This is a permanent action and irreversible, if there is any mistake happens, delete this action and create a new action.</p>
+            <p class="text-[20px] mt-1 leading-[45px]">This action is permanent and cannot be undone. If needed, create a new action.</p>
         </span>
 
         <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
@@ -182,7 +182,7 @@
             <ranjangaon-icons [icon]="'localisationScore'" [size]="200" [color]="colors.dialogIcon"></ranjangaon-icons>
         </div>
 
-        <p class="text-[20px] mt-4 leading-[45px]">Tap the button to localize the robot.</p>
+        <p class="text-[20px] mt-4 leading-[45px]">Tap Localize to set the robot's position.</p>
 
         <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
             <button (click)="isLocaliseDialogOpen = true" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
@@ -200,11 +200,11 @@
             <ranjangaon-icons [icon]="'unload'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
         </div>
 
-        <p class="text-[20px] mt-4 leading-[45px]">Are you sure to delete this action ?</p>
+        <p class="text-[20px] mt-4 leading-[45px]">Are you sure you want to unload the item ?</p>
 
         <span class="w-full mt-6">
             <p class="text-[22px] font-semibold text-primary">Note</p>
-            <p class="text-[20px] mt-1 leading-[45px]">This is a permanent action and irreversible, if there is any mistake happens, delete this action and create a new action.</p>
+            <p class="text-[20px] mt-1 leading-[45px]">Press the button, after unloading the item from the robot, Don’t forgot to click the button, after unloading the item.</p>
         </span>
 
         <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
@@ -226,11 +226,11 @@
             <ranjangaon-icons [icon]="'home-location'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
         </div>
 
-        <p class="text-[20px] mt-4 leading-[45px]">Robot is going to it's home location.</p>
+        <p class="text-[20px] mt-4 leading-[45px]">The robot is moving to its home position.</p>
 
         <span class="w-full mt-6">
             <p class="text-[22px] font-semibold text-primary">Note</p>
-            <p class="text-[20px] mt-1 leading-[45px]">It won't accept any task, until reaching the home position</p>
+            <p class="text-[20px] mt-1 leading-[45px]">The robot will not accept new tasks until it reaches the home position.</p>
         </span>
     </div>
 </fleet-popup>
@@ -251,11 +251,11 @@
         </div>
 
         <div *ngIf="currentState === robotState.CHARGING && liveData?.battery >= configuration?.battery.max" class="mt-4 animate-slideIn">
-            <p class="text-[20px] leading-[45px]">Charging completed, unplug the charger and Acknowledge.</p>
+            <p class="text-[20px] leading-[45px]">Charging is complete. Unplug the charger, then tap Acknowledge.</p>
 
             <span class="w-full mt-6">
                 <p class="text-[22px] font-semibold text-primary">Note</p>
-                <p class="text-[20px] mt-1 leading-[45px]">After Acknowledgement, Robot will be moving to its home location.</p>
+                <p class="text-[20px] mt-1 leading-[45px]">After acknowledgment, the robot will move to its home position.</p>
             </span>
 
             <button (click)="charging['disconnectedAckGiven'] = true; setStateFromUI(robotState.CHARGING_COMPLETE_ACK)" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px] mt-16">
@@ -327,7 +327,7 @@
 
         <span class="w-full mt-6">
             <p class="text-[22px] font-semibold text-primary">Note</p>
-            <p class="text-[20px] mt-1 leading-[45px]">The current task will continue. Once all tasks are completed, the robot will be automatically assigned to the charging station.</p>
+            <p class="text-[20px] mt-1 leading-[45px]">The current task will continue. After completion, the robot will automatically move to the charging station.</p>
         </span>
     </div>
 </fleet-popup>
