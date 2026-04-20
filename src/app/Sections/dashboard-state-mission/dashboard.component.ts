@@ -145,9 +145,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.colors = colors;
         this.print = new Print();
         this.currentState = this.ss.getItem('_currentState') | RobotState.IDLE;
-        this.configuration = this.ss.getItem('_config') || null;
-
-        console.log(this.configuration && true);
+        this.configuration = this.ss.getItem('_config') ?? null;
 
         if(!this.configuration) {
             this.print.log('No Configuration is there to use!')
@@ -217,24 +215,24 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     // ===================================================================================================
 
     private monitorStatus() {
-        this.pickLocations = this.ss.getItem('_pickLocation');
-        console.log(this.pickLocations);
+        this.pickLocations = this.ss.getItem('_pickLocation') ?? [];
+        // console.log(this.pickLocations);
 
-        // This logic initially send the pick tasks to the robot, but it need to be implemented in IDLE state - For better understanding and better code quality
-        if(this.pickLocations && this.pickLocations.length !== 0) {
-            this.pickLocations = this.ss.getItem('_pickLocation');
-            this.print.log('Pick Location Already Exists =>', this.pickLocations);
-            this.isPickTaskSent = true;
-            this.isDropTaskSent = false;
-        }
-        else {
-            this.pickLocations = this.generatePickLocations();
-            this.print.log('Pick Location were generated =>', this.pickLocations);
-            this.ss.setItem('_pickLocation', this.pickLocations);
-            this.pickLocations = this.generatePickLocations();
-            this.sendPickTasksToRobot(this.pickLocations);
-            this.setRefencePoint();
-        }
+        // // This logic initially send the pick tasks to the robot, but it need to be implemented in IDLE state - For better understanding and better code quality
+        // if(this.pickLocations && this.pickLocations.length !== 0) {
+        //     this.pickLocations = this.ss.getItem('_pickLocation');
+        //     this.print.log('Pick Location Already Exists =>', this.pickLocations);
+        //     this.isPickTaskSent = true;
+        //     this.isDropTaskSent = false;
+        // }
+        // else {
+        //     this.pickLocations = this.generatePickLocations();
+        //     this.print.log('Pick Location were generated =>', this.pickLocations);
+        //     this.ss.setItem('_pickLocation', this.pickLocations);
+        //     this.pickLocations = this.generatePickLocations();
+        //     this.sendPickTasksToRobot(this.pickLocations);
+        //     this.setRefencePoint();
+        // }
 
         this.subscription = this.liveStream.serverEvent$.subscribe(async(data:any) => {
             if(data?.live) {
@@ -245,7 +243,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.print.log('Server Offline and no data is coming form navitrol')
             }
             await this.stateMachine(data);
-            // this.localisationScore = data?.localisation?.score;
             this.localisationStatus = data?.localisation?.error?.code;
             this.taskTransition(data);
         });
@@ -277,6 +274,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.ss.setItem('_dropAck', this.dropLocationAck['given']);
                 this.ss.setItem('_pickAck', this.pickLocationAck['given']);
 
+                this.pickLocations = this.ss.getItem('_pickLocation') ?? [];
+
                 if(this.localisationStatus === 207) {
                     break;
                 }
@@ -298,9 +297,19 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.isPickTaskSent = false;
                     this.isDropTaskSent = false;
                 }
-                else {
-                    const nodes = this.generatePickLocations();
-                    this.sendPickTasksToRobot(nodes);
+                // else {
+                //     const nodes = this.generatePickLocations();
+                //     this.sendPickTasksToRobot(nodes);
+                // }
+                // Pick task initialization — guarded by session storage
+                // If pickLocations exists in SS, tasks were already sent (even across reloads)
+                else if(!this.pickLocations || this.pickLocations.length === 0) {
+                    this.pickLocations = this.generatePickLocations();
+                    this.ss.setItem('_pickLocation', this.pickLocations);
+                    this.sendPickTasksToRobot(this.pickLocations);
+                    this.setRefencePoint();
+                    this.isPickTaskSent = true;
+                    this.isDropTaskSent = false;
                 }
                 break;
 
@@ -344,29 +353,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
                 break;
 
-            // case RobotState.ARRIVED_PICK:
-            //     // Only works in the home position
-            //     if(data?.currentNode?.current === nodes?.pickNode[0]) {
-            //         this.setState(await this.pickAPI.completeTask(nodes?.pickNode[0]) ? RobotState.IDLE : RobotState.ARRIVED_PICK);
-            //     }
-            //     // Works on all other pick point
-            //     else {
-            //         const reachedPickLocation = nodes?.pickNode.includes(data?.currentNode.current) ? data?.currentNode.current : -1;
-            //         if(await this.pickAPI.completeTask(reachedPickLocation)) {
-            //             this.setState(RobotState.PICK_ACK);
-            //         }
-            //         else {
-            //             this.setState(RobotState.TASK_SENT)
-            //         }
-            //         this.pickLocationAck['given'] = false;
-            //         this.setState(RobotState.WAITING_PICK_ACK);
-            //         this.startAcknowledgementTimer();
-            //         break
-            //     }
-            //     break;
-
             case RobotState.ARRIVED_PICK:
                 const condition = data?.currentNode?.current === nodes?.homeNode;
+
                 if(!condition) {
                     this.print.log('Pick location ACK is Set False', this.pickLocationAck['given']);
                     this.setState(RobotState.WAITING_PICK_ACK);
@@ -429,10 +418,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 break;
 
             case RobotState.PICK_ACK:
-                // if(data?.currentNode?.current !== this.configuration?.nodes?.pickNode[0]) { //Already there is check for this condition, this is secondary
-                //     this.setState(RobotState.WAITING_PICK_ACK);
-                //     this.startAcknowledgementTimer();
-                // }
                 this.setState(RobotState.MOVE_NEXT_PICK)
                 break;
 
@@ -463,10 +448,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 break;
 
             case RobotState.MOVE_NEXT_PICK:
-                // if(await this.pickAPI.createTask([nodes?.pickNode[this.currentPickLocationIndex]])) {
-                //     this.setState(RobotState.TASK_SENT)
-                // }
-
                 this.print.log('Moving to Next Pick Location');
                 if(await this.pickAPI.completeTask(data?.currentNode?.current)) {
 
@@ -571,20 +552,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
      * If the list size is 1, it make the state to IDLE and if the size is more, list is sent to robot and change the Status to TASK_SENT
      */
     async sendPickTasksToRobot(nodes:number[]){
-        // if(this.getPickNodeListLen() > 1 && !this.isPickTaskSent) {
-        //     let pickNodes:any[] = Array.from(this.configuration?.nodes?.pickNode);
-        //     pickNodes.shift()
-        //     if(await this.pickAPI.createTask(pickNodes)) {
-        //         this.setState(RobotState.TASK_SENT);
-        //         this.type = 'PICK';
-        //         this.isPickTaskSent = true;
-        //         this.isDropTaskSent = false;
-        //     }
-        //     else {
-        //         this.setState(RobotState.IDLE);
-        //     }
-        // }
-
         if(!this.isPickTaskSent) {
             if(await this.pickAPI.createTask(nodes)) {
                 this.setType('PICK')
@@ -612,11 +579,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
      * Used to mark the task as complete or skip task
      */
     async skipPickLocation() {
-        // this.pickLocationVisitedCount = this.ss.getItem('_pickLocationVisitedCount') || 1;
         this.pickLocations = this.ss.getItem('_pickLocation')
-        // const pickListLen = this.getPickNodeListLen()
-        // console.log('Skip Log Function Triggered', pickListLen, this.generatePickLocations())
-        // if(this.pickLocationVisitedCount === pickListLen) {
         this.print.log('Skip Location Triggered')
         this.setState(RobotState.MOVE_NEXT_PICK);
         console.log('Current Robot State =>',this.stateOfRobot[this.currentState])
@@ -626,7 +589,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     isTaskPresent() {
         this.createdTaskList = this.fetchTaskListFromSS();
         const list = this.getAllTheLocationsFromRawData(this.createdTaskList);
-        return list.length === 0 ? false : true
+        return list.length === 0
     }
 
     /**
@@ -635,7 +598,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
      */
     private generatePickLocations():number[] {
         let nodes:any = this.configuration?.nodes;
-        let pickTaskList = [...nodes?.pickNode, nodes?.homeNode];
+        let pickTaskList = [...(nodes?.pickNode ?? []), nodes?.homeNode];
         return pickTaskList
     }
 
