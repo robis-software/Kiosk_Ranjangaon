@@ -12,6 +12,7 @@ import { SseService } from '../../Services/sse.service';
 import { config, Subscription } from 'rxjs';
 import { LogsService } from '../../Services/logs.service';
 import TasksCore from '../../core/tasks.core';
+import { NotificationService } from '../../Services/notification.service';
 
 enum RobotState {
     IDLE, // 0
@@ -130,7 +131,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         currentNode: 0
     }
 
-    constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly router:Router, private readonly liveStream:SseService, private readonly cdf:ChangeDetectorRef, private readonly logs:LogsService) {
+    constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly router:Router, private readonly liveStream:SseService, private readonly cdf:ChangeDetectorRef, private readonly logs:LogsService, private readonly notification:NotificationService) {
         this.chargeAPI = new TasksCore(this.api, this.logs, 'Charge');
         this.pickAPI = new TasksCore(this.api, this.logs, 'Pick');
         this.taskAPI = new TasksCore(this.api, this.logs, 'Drop');
@@ -499,7 +500,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 break;
 
             case RobotState.CHARGING_COMPLETE_ACK:
+                if(await this.isChargerConnected()) {
+                    // If the battery is still charging then, Acknowledgement should to be cancelled
+                    this.notification.warn('Warning', 'Still Robot is connected with charger, unplug it and acknowledge');
+                    break;
+                }
+
                 if(await this.taskAPI.createTask([nodes?.homeNode])) {
+                    this.charging['disconnectedAckGiven'] = true
                     this.isPickTaskSent = false;
                     this.isDropTaskSent = false;
                     this.charging['reached'] = false;
@@ -508,7 +516,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.setState(RobotState.TASK_SENT);
                     this.setType('IDLE');
                 }
-                this.charging['disconnectedAckGiven'] = true
+                else {
+                    this.setState(RobotState.CHARGING_COMPLETE_ACK);
+                }
                 break;
         }
 

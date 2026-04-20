@@ -29,7 +29,9 @@ module.exports = {
         slideFromDown: 'popupEntry 0.5s cubic-bezier(0.4, 0, 0.6, 1) forwards',
         vibrate: 'vibrate 0.2s ease-in-out infinite',
         slideIn: 'slideIn 0.4s ease-in-out forwards',
-        slideOut: 'slideOut 0.4s ease-in-out forwards'
+        slideOut: 'slideOut 0.4s ease-in-out forwards',
+        arrowAnimation: 'arrowMoving 1s ease-in-out forwards infinite',
+        inPlaceRotation: 'rotating 3s linear forwards infinite'
       },
       keyframes: {
         screenSaverIn: {
@@ -49,10 +51,20 @@ module.exports = {
             '25%': { transform: 'translateX(3px)' },
             '50%': { transform: 'translateX(0px)' },
             '75%': { transform: 'translateX(-3px)' },
+            '100%': { transform: 'translateX(0px)' }
         },
         slideIn: {
             'from': { transform: 'translateX(10%)', opacity: 0},
             'to': { transform: 'translateX(0%)', opacity: 1},
+        },
+        arrowMoving: {
+            '0%': { transform: 'translateX(0px)' },
+            '50%': { transform: 'translateX(5px)' },
+            '100%': { transform: 'translateX(0px)' },
+        },
+        rotating: {
+            '0%': { transform: 'rotate(0deg)' },
+            '100%': { transform: 'rotate(360deg)'},
         }
       }
     },
