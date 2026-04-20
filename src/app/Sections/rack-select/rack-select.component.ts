@@ -6,12 +6,13 @@ import { colors } from '../../Utils/colors';
 import { ApiService } from '../../Services/api.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SessionStorageService } from '../../Services/session-storage.service';
+import { IllustrationsComponent } from '../../Components/illustrations/illustrations.component'
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'ranjangaon-rack-select',
   standalone: true,
-  imports: [TitleComponent, IconsComponent],
+  imports: [TitleComponent, IconsComponent, IllustrationsComponent],
   templateUrl: './rack-select.component.html',
   styleUrl: './rack-select.component.css'
 })
@@ -26,6 +27,8 @@ export class RackSelectComponent implements OnInit, OnDestroy {
     configuration:any;
 
     taskList:any = {};
+
+    noDataIllustration:boolean = false;
 
     constructor(private readonly api:ApiService, private readonly activeRoute:ActivatedRoute, private readonly router:Router, private readonly ss:SessionStorageService) {
         this.colors = colors;
@@ -49,9 +52,11 @@ export class RackSelectComponent implements OnInit, OnDestroy {
                 this.print.log(response);
                 this.locations = response.data.filter((data:any) => !locationToBeIgnored.includes(data)).sort();
                 this.setPickPoint();
+                this.noDataIllustration = false;
             },
             error: (error:any) => {
-                this.print.error('Error Happened while fetching locations in ract-select => ',error)
+                this.print.error('Error Happened while fetching locations in ract-select => ',error);
+                this.noDataIllustration = true;
             }
         })
     }
