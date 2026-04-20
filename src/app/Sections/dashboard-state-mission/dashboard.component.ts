@@ -244,7 +244,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             }
             await this.stateMachine(data);
             this.localisationStatus = data?.localisation?.error?.code;
-            this.taskTransition(data);
         });
     }
 
@@ -1035,15 +1034,5 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     getCurrentPickTaskLoationsLen() {
         const pickLocations:number[] = this.ss.getItem('_pickLocation') ?? [];
         return pickLocations.length;
-    }
-
-    taskTransition(data:any){
-        if(data?.currentNode?.current !== this.transition['currentNode']) {
-            const temp = {...this.transition};
-            this.transition['prevNode'] = temp['currentNode'];
-            this.transition['currentNode'] = data?.currentNode?.current;
-
-            this.print.log(this.transition);
-        }
     }
 }
