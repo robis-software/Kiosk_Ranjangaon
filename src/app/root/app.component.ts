@@ -5,18 +5,16 @@ import Print from '../Utils/print';
 import { LayoutComponent } from "../layout/layout.component";
 import { ApiService } from '../Services/api.service';
 import { SessionStorageService } from '../Services/session-storage.service';
-import { LiveStatusService } from '../Services/live-status.service';
 import { environment } from '../../environment/environment';
 import { SseService } from '../Services/sse.service';
-import { PopupComponent } from "../Components/popup/popup.component";
-import { IconsComponent } from "../Components/icons/icons.component";
 import { colors } from '../Utils/colors';
 import { Router } from '@angular/router';
+import { ToastModule } from 'primeng/toast';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, ScreenSaverComponent, LayoutComponent, PopupComponent, IconsComponent],
+  imports: [CommonModule, ScreenSaverComponent, LayoutComponent, ToastModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
