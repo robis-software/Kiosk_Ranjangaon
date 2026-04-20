@@ -161,7 +161,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.dropLocationAck['given'] = this.ss.getItem('_dropAck') === null ? false : this.ss.getItem('_dropAck');
         this.pickLocationAck['given'] = this.ss.getItem('_pickAck') === null ? false : this.ss.getItem('_pickAck');
-        // this.ss.setItem('_pickLocationVisitedCount', 0);
     }
 
     ngAfterViewInit(): void {
@@ -170,7 +169,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             const rackContRef = this.rackContainer.nativeElement;
             rackContRef.style.gridTemplateRows = `repeat(${this.configuration.racks.rows}, 1fr)`;
             rackContRef.style.gridTemplateColumns = `repeat(${this.configuration.racks.columns}, 1fr)`;
-            // this.print.log(rackContRef.style);
         }
     }
 
@@ -249,7 +247,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             await this.stateMachine(data);
             // this.localisationScore = data?.localisation?.score;
             this.localisationStatus = data?.localisation?.error?.code;
-            // this.localisationStatus = Number(data?.localisation?.error?.code);
             this.taskTransition(data);
         });
     }

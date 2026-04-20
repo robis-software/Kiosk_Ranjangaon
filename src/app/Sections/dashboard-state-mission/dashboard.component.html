@@ -336,14 +336,28 @@
 <fleet-popup *ngIf="!this.configuration" [isClose]="false" [title]="'Not Found!!'">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full py-12 h-max">
-            <ranjangaon-icons [icon]="'lowBattery'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
+            <ranjangaon-icons [icon]="'config404'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
         </div>
 
-        <p class="text-[20px] mt-4 leading-[45px]">Battery level is low.</p>
+        <p class="text-[20px] mt-4 leading-[45px]">Configuration file is missing in the server.</p>
 
         <span class="w-full mt-6">
             <p class="text-[22px] font-semibold text-primary">Note</p>
-            <p class="text-[20px] mt-1 leading-[45px]">The current task will continue. Once all tasks are completed, the robot will be automatically assigned to the charging station.</p>
+            <p class="text-[20px] mt-1 leading-[45px]">Add the configuration file and restart the robot to apply the new configuration.</p>
         </span>
+    </div>
+</fleet-popup>
+
+<!-- Task-Transition popup-->
+<fleet-popup *ngIf="liveData?.currentNode?.status === 8 && liveData?.currentNode?.current !== configuration?.nodes?.homeNode" [isClose]="false" [title]="'Robot Moving!!'">
+    <div class="flex flex-col items-start justify-start w-full h-max">
+        <p class="text-[20px] mt-4 leading-[45px]">Robot is moving from its location to the destination location</p>
+
+        <p class="text-[20px] mt-4 leading-[45px]">Current task</p>
+        <div class="flex items-center justify-start w-full h-max gap-[30px] mt-2">
+            <p class="size-[65px] flex items-center justify-center text-[32px] text-white font-bold bg-primary rounded-[6px]">{{transition.prevNode}}</p>
+            <ranjangaon-icons [icon]="'sideArrow'" [size]="30" [color]="colors.dialogIcon"></ranjangaon-icons>
+            <p class="size-[65px] flex items-center justify-center text-[32px] text-black font-bold bg-lightGray rounded-[6px]">{{transition.currentNode}}</p>
+        </div>
     </div>
 </fleet-popup>
