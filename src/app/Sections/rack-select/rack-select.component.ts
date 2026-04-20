@@ -8,11 +8,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { SessionStorageService } from '../../Services/session-storage.service';
 import { IllustrationsComponent } from '../../Components/illustrations/illustrations.component'
 import { Subscription } from 'rxjs';
-
+import { LoadingUiComponent } from "../../Components/loading-ui/loading-ui.component";
 @Component({
   selector: 'ranjangaon-rack-select',
   standalone: true,
-  imports: [TitleComponent, IconsComponent, IllustrationsComponent],
+  imports: [TitleComponent, IconsComponent, IllustrationsComponent, LoadingUiComponent],
   templateUrl: './rack-select.component.html',
   styleUrl: './rack-select.component.css'
 })
@@ -29,6 +29,7 @@ export class RackSelectComponent implements OnInit, OnDestroy {
     taskList:any = {};
 
     noDataIllustration:boolean = false;
+    isLoading:boolean = true;
 
     constructor(private readonly api:ApiService, private readonly activeRoute:ActivatedRoute, private readonly router:Router, private readonly ss:SessionStorageService) {
         this.colors = colors;
@@ -47,16 +48,19 @@ export class RackSelectComponent implements OnInit, OnDestroy {
 
     private fetchLocations() {
         const locationToBeIgnored = this.ignoreLocations();
+        this.isLoading = true;
         this.locationDetailsSubscription = this.api.get('navitrol/location-list', {}).subscribe({
             next: (response:any) => {
                 this.print.log(response);
                 this.locations = response.data.filter((data:any) => !locationToBeIgnored.includes(data)).sort();
                 this.setPickPoint();
                 this.noDataIllustration = false;
+                this.isLoading = false;
             },
             error: (error:any) => {
                 this.print.error('Error Happened while fetching locations in ract-select => ',error);
                 this.noDataIllustration = true;
+                this.isLoading = false;
             }
         })
     }

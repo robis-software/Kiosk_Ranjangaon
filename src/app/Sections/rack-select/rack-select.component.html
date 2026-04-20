@@ -15,9 +15,14 @@
         </div>
     </div>
 
-    <div class="flex flex-col gap-3 p-4 rounded-[14px] border-2 border-lightGray bg-rackSelect w-full h-full">
+    <div class="flex flex-col gap-3 p-4 rounded-[14px] border-2 border-lightGray bg-rackSelect w-full h-full relative">
         <p class="text-[16px] text-primary font-medium">Select Drop Location</p>
-        @if(noDataIllustration) {
+        @if(isLoading) {
+            <div class="w-full h-full">
+                <fleet-loading-ui></fleet-loading-ui>
+            </div>
+        }
+        @else if(noDataIllustration) {
             <div class="flex items-start justify-center w-full h-full pt-32 animate-slideFromDown">
                 <fleet-illustrations [illustration]="'noData'" [size]='500'></fleet-illustrations>
             </div>

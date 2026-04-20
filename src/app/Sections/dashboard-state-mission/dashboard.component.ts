@@ -508,6 +508,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
 
                 if(await this.taskAPI.createTask([nodes?.homeNode])) {
+                    this.charging['disconnectedAckGiven'] = true
                     this.isPickTaskSent = false;
                     this.isDropTaskSent = false;
                     this.charging['reached'] = false;
@@ -516,7 +517,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.setState(RobotState.TASK_SENT);
                     this.setType('IDLE');
                 }
-                this.charging['disconnectedAckGiven'] = true
+                else {
+                    this.setState(RobotState.CHARGING_COMPLETE_ACK);
+                }
                 break;
         }
 

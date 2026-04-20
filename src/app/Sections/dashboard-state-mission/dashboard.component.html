@@ -71,7 +71,7 @@
 </div>
 
 <!-- Delete Popup -->
-<fleet-popup *ngIf="isDeleteAction" [title]="'Action Needed!!'" (view)="isDeleteAction = $event">
+<fleet-popup *ngIf="isDeleteAction" [title]="'Action Needed !'" (view)="isDeleteAction = $event">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full py-12 h-max">
             <ranjangaon-icons [icon]="'delete'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
@@ -125,7 +125,7 @@
 </fleet-popup>
 
 <!-- Acknwoledgement Popup -->
-<fleet-popup *ngIf="currentState === robotState.WAITING_DROP_ACK && !dropLocationAck['given']" [isClose]="false" [title]="'Attention Needed!!'">
+<fleet-popup *ngIf="currentState === robotState.WAITING_DROP_ACK && !dropLocationAck['given']" [isClose]="false" [title]="'Attention Needed !'">
     <div *ngIf="!dropLocationAck['skip']" class="flex flex-col items-start justify-start w-full translate-x-full h-max animate-slideIn">
 
         <div class="w-full h-[350px] mt-4 flex flex-col items-center justify-center relative">
@@ -176,7 +176,7 @@
 </fleet-popup>
 
 <!-- Localisation Error -->
-<fleet-popup *ngIf="localisationStatus === 207 && !isLocaliseDialogOpen" [isClose]="false" [title]="'Robot Delocalized!!'">
+<fleet-popup *ngIf="localisationStatus === 207 && !isLocaliseDialogOpen" [isClose]="false" [title]="'Robot Delocalized !'">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full h-[300px]">
             <ranjangaon-icons [icon]="'localisationScore'" [size]="200" [color]="colors.dialogIcon"></ranjangaon-icons>
@@ -194,7 +194,7 @@
 </fleet-popup>
 
 <!-- Unload Popup -->
-<fleet-popup *ngIf="isUnloadAction" [title]="'Action Needed!!'" (view)="isUnloadAction = $event">
+<fleet-popup *ngIf="isUnloadAction" [title]="'Action Needed !'" (view)="isUnloadAction = $event">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full py-12 h-max">
             <ranjangaon-icons [icon]="'unload'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
@@ -220,7 +220,7 @@
 </fleet-popup>
 
 <!-- Returning to home UI-->
-<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.homeNode && liveData?.currentNode?.status !== 13 && this.configuration" [title]="'Returning Home!!'" [isClose]="false">
+<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.homeNode && liveData?.currentNode?.status !== 13 && this.configuration" [title]="'Returning Home !'" [isClose]="false">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full py-12 h-max">
             <ranjangaon-icons [icon]="'home-location'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
@@ -236,7 +236,7 @@
 </fleet-popup>
 
 <!-- Robot Charging UI -->
-<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode && liveData?.currentNode?.status === 13 && (currentState === robotState.CHARGER_CONNECTED || currentState === robotState.CHARGING)" [title]="'Charging Mode!!'" [isClose]="false">
+<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode && liveData?.currentNode?.status === 13 && (currentState === robotState.CHARGER_CONNECTED || currentState === robotState.CHARGING)" [title]="'Charging Mode !'" [isClose]="false">
     <div class="w-full h-full">
         <div class="w-max h-[400px] overflow-hidden mt-8 flex items-center justify-center relative">
             <ranjangaon-circular-indicator [angle]="360" [size]="500" [color]="batteryIndicatorColor(liveData?.battery)" [data]="+liveData?.battery || 30" [rotate]="-90" >
@@ -258,7 +258,7 @@
                 <p class="text-[20px] mt-1 leading-[45px]">After acknowledgment, the robot will move to its home position.</p>
             </span>
 
-            <button (click)="charging['disconnectedAckGiven'] = true; setStateFromUI(robotState.CHARGING_COMPLETE_ACK)" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px] mt-16">
+            <button (click)="setStateFromUI(robotState.CHARGING_COMPLETE_ACK)" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px] mt-16">
                 Acknowledge
             </button>
         </div>
@@ -266,7 +266,7 @@
 </fleet-popup>
 
 <!-- Pick Up Acknwoledgement Popup -->
-<fleet-popup *ngIf="currentState === robotState.WAITING_PICK_ACK && !pickLocationAck['given']" [isClose]="false" [title]="'Attention Needed!!'">
+<fleet-popup *ngIf="currentState === robotState.WAITING_PICK_ACK && !pickLocationAck['given']" [isClose]="false" [title]="'Attention Needed !'">
     <div *ngIf="!pickLocationAck['skip']" class="flex flex-col items-start justify-start w-full translate-x-full h-max animate-slideIn">
 
         <div class="w-full h-[350px] mt-4 flex flex-col items-center justify-center relative">
@@ -317,7 +317,7 @@
 </fleet-popup>
 
 <!-- Low Battery Alert UI -->
-<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode && liveData?.currentNode?.status !== 13 && (currentState === robotState.CHARGING_REQUESTED || currentState === robotState.ARRIVED_CHARGE || currentState === robotState.TASK_SENT)" [isClose]="false" [title]="'Battery Low!!'">
+<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode && liveData?.currentNode?.status !== 13 && (currentState === robotState.CHARGING_REQUESTED || currentState === robotState.ARRIVED_CHARGE || currentState === robotState.TASK_SENT)" [isClose]="false" [title]="'Battery Low !'">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full py-12 h-max">
             <ranjangaon-icons [icon]="'lowBattery'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
@@ -333,7 +333,7 @@
 </fleet-popup>
 
 <!-- No configuration alert banner -->
-<fleet-popup *ngIf="!this.configuration" [isClose]="false" [title]="'Not Found!!'">
+<fleet-popup *ngIf="!this.configuration && false" [isClose]="false" [title]="'Not Found !'">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full py-12 h-max">
             <ranjangaon-icons [icon]="'config404'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
@@ -349,15 +349,39 @@
 </fleet-popup>
 
 <!-- Task-Transition popup-->
-<fleet-popup *ngIf="liveData?.currentNode?.status === 8 && liveData?.currentNode?.current !== configuration?.nodes?.homeNode" [isClose]="false" [title]="'Robot Moving!!'">
-    <div class="flex flex-col items-start justify-start w-full h-max">
-        <p class="text-[20px] mt-4 leading-[45px]">Robot is moving from its location to the destination location</p>
-
-        <p class="text-[20px] mt-4 leading-[45px]">Current task</p>
-        <div class="flex items-center justify-start w-full h-max gap-[30px] mt-2">
-            <p class="size-[65px] flex items-center justify-center text-[32px] text-white font-bold bg-primary rounded-[6px]">{{transition.prevNode}}</p>
-            <ranjangaon-icons [icon]="'sideArrow'" [size]="30" [color]="colors.dialogIcon"></ranjangaon-icons>
-            <p class="size-[65px] flex items-center justify-center text-[32px] text-black font-bold bg-lightGray rounded-[6px]">{{transition.currentNode}}</p>
+<fleet-popup *ngIf="liveData?.currentNode?.status === 8 && liveData?.currentNode?.current !== configuration?.nodes?.homeNode" [isClose]="false" [title]="'Robot Moving !'">
+    <div class="flex items-center justify-start w-full gap-8 mt-4 h-max">
+        <div class="min-w-[111px] h-[111px] rounded-[14px] bg-primary flex items-center justify-center">
+            <ranjangaon-icons [icon]="'robot'" [size]="68" [color]="'#FFF'"></ranjangaon-icons>
         </div>
+
+        <div class="flex items-center justify-center h-[111px] w-max">
+            <ranjangaon-icons [icon]="'sideArrow'" class="animate-arrowAnimation" [size]="32" [color]="colors.dialogIcon"></ranjangaon-icons>
+        </div>
+
+        <div class="flex items-start justify-between w-full h-[111px] border-2 border-lightGray rounded-[14px] bg-white p-6 animate-slideFromDown">
+            <span class="flex flex-col gap-2">
+                <p class="text-[14px] text-darkAsh">Arriving to</p>
+                <p class="text-[40px] text-black font-semibold mt-2">{{liveData?.currentNode?.current ? liveData?.currentNode?.current < 10 ? ('LOC - 0'+liveData?.currentNode?.current): ('LOC - '+liveData?.currentNode?.current) : '--'}}</p>
+            </span>
+            <ranjangaon-icons class="mt-3" [icon]="'location'" [size]="60" [color]="colors.primary"></ranjangaon-icons>
+        </div>
+
     </div>
 </fleet-popup>
+
+<!-- Inplace Rotation -->
+ <fleet-popup *ngIf="false" [isClose]="false" [title]="'Robot Rotating !'">
+    <div class="flex flex-col items-start justify-start w-full h-max">
+        <div class="flex items-center justify-center w-full py-12 h-max">
+            <ranjangaon-icons [icon]="'turn'" class="animate-inPlaceRotation" [size]="120" [color]="colors.dialogIcon"></ranjangaon-icons>
+        </div>
+
+        <p class="text-[20px] mt-4 leading-[45px]">Robot is rotating in th current location.</p>
+
+        <span class="w-full mt-6">
+            <p class="text-[22px] font-semibold text-primary">Note</p>
+            <p class="text-[20px] mt-1 leading-[45px]">After rotation is getting completed, Next action will be executed.</p>
+        </span>
+    </div>
+</fleet-popup>s

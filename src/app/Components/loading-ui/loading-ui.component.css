@@ -1,0 +1,72 @@
+.image1 {
+  animation: img1 3s linear infinite;
+ }
+
+ .image2 {
+   animation: img2 3s linear infinite;
+  }
+
+  .image3 {
+   animation: img3 3s linear infinite;
+  }
+
+  .img {
+   animation: img 2s linear infinite;
+  }
+
+
+
+ @keyframes img1 {
+   0% {
+     opacity: 0;
+   }
+   30% {
+     opacity: 1;
+   }
+
+   100% {
+     opacity: 0;
+   }
+ }
+
+ @keyframes img2 {
+   0% {
+     opacity: 0;
+   }
+   60% {
+     opacity: 1;
+   }
+   100% {
+     opacity: 0;
+   }
+ }
+
+ @keyframes img3 {
+   0% {
+     opacity: 0;
+   }
+   90% {
+     opacity: 1;
+   }
+   100% {
+     opacity: 0;
+   }
+ }
+
+ @keyframes img {
+   0% {
+     opacity: 0;
+   }
+
+   40% {
+     opacity: 1;
+   }
+
+   80% {
+     opacity: 1;
+   }
+
+   100% {
+     opacity: 0;
+   }
+ }
