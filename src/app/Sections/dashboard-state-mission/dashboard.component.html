@@ -56,15 +56,17 @@
         </div>
 
         <div class="flex items-center justify-end w-full gap-3 h-max">
-            <button *ngIf="getCurrentPickTaskLoationsLen() === 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[110px] rounded-[6px] bg-status-green flex gap-1 flex-col items-center justify-center text-white font-normal text-[22px] animate-slideFromDown">
-                Start
-            </button>
-            <button *ngIf="getCurrentPickTaskLoationsLen() !== 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[110px] rounded-[6px] bg-lavender flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
-                <ranjangaon-icons [icon]="'skip'" [size]="40" [color]="'#FFF'"></ranjangaon-icons>
-            </button>
             <button (click)="rotateInplace()" *ngIf="liveData?.currentNode?.current === 13 || liveData?.currentNode?.current === configuration?.nodes?.homeNode" class="size-[110px] rounded-[6px] bg-[#263238] flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
                 <ranjangaon-icons [icon]="'turn'" [size]="40" [color]="'#FFF'"></ranjangaon-icons>
                 <!-- Rotate  -->
+            </button>
+
+            <button *ngIf="getCurrentPickTaskLoationsLen() === 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[110px] rounded-[6px] bg-status-green flex gap-1 flex-col items-center justify-center text-white font-normal text-[22px] animate-slideFromDown">
+                Start
+            </button>
+
+            <button *ngIf="getCurrentPickTaskLoationsLen() !== 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[110px] rounded-[6px] bg-lavender flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
+                <ranjangaon-icons [icon]="'skip'" [size]="40" [color]="'#FFF'"></ranjangaon-icons>
             </button>
         </div>
     </div>
@@ -349,7 +351,7 @@
 </fleet-popup>
 
 <!-- Task-Transition popup-->
-<fleet-popup *ngIf="liveData?.currentNode?.status === 8 && liveData?.currentNode?.current !== configuration?.nodes?.homeNode" [isClose]="false" [title]="'Robot Moving!!'">
+<fleet-popup *ngIf="liveData?.currentNode?.status === 8 && liveData?.currentNode?.current !== configuration?.nodes?.homeNode && liveData?.currentNode?.current !== configuration?.nodes?.chargingNode" [isClose]="false" [title]="'Robot Moving!!'">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <p class="text-[20px] mt-4 leading-[45px]">Robot is moving from its location to the destination location</p>
 

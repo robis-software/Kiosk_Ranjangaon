@@ -1042,6 +1042,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             const temp = {...this.transition};
             this.transition['prevNode'] = temp['currentNode'];
             this.transition['currentNode'] = data?.currentNode?.current;
+
+            this.print.log(this.transition);
         }
     }
 }
