@@ -562,7 +562,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
      */
     private rotate_180_status():Promise<boolean> {
         return new Promise((resolve, reject)=> {
-            this.api.get('navitrol/rotate-180/status', {}).subscribe({
+            this.api.get('navitrol/rotate-180-status', {}).subscribe({
                 next: (response:any) => {
                     resolve(response.data)
                 },
