@@ -142,6 +142,17 @@ class NavitrolClientController {
         }
     }
 
+    // In-place rotation API status
+    inPlaceRotationStatus = async(req:Request, res:Response, next:NextFunction) => {
+        try {
+           const response = await this.postData(process.env.ROTATE_180_STATUS, {});
+           res.status(200).json({message: 'Pivot rotation status API has been fetched from the robot', data: response.data}) 
+        } catch (error) {
+            this.print.log('API Call Failed: inPlaceRotationStatus() in NavitrolClientController');
+            res.status(400).json({message: 'Error Happened getting the rotation of the robot', error});
+        }
+    }
+
     // Set Pick Point
     setPickLocation = async(req:Request, res:Response, next:NextFunction) => {
         try {
@@ -204,7 +215,7 @@ class NavitrolClientController {
                 date:new Date().toLocaleTimeString().split(' ')[0],
                 live,
                 localisation, 
-                battery: battery, 
+                battery: 92, 
                 speed: speed < 0  ? (-speed) : speed, 
                 currentNode
             };

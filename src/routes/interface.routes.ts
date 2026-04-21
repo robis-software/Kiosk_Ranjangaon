@@ -12,6 +12,7 @@ interfaceRouter.post('/complete-task', navitrolClientController.sendTaskFeedback
 interfaceRouter.post('/create-task', navitrolClientController.sendTaskToRobot);
 interfaceRouter.post('/initialize', navitrolClientController.initializeRobot);
 interfaceRouter.post('/rotate-180', navitrolClientController.inPlaceRotation);
+interfaceRouter.post('/rotate-180-status', navitrolClientController.inPlaceRotationStatus);
 interfaceRouter.post('/set-pick-location', navitrolClientController.setPickLocation);
 
 
