@@ -6,9 +6,10 @@
                     (click)="sendRackID(rack)"
                     *ngIf="rack"
                     [ngClass]="{
-                        'bg-racks': !rack.isLoaded || isTaskListSent,
-                        'bg-status-green': (rack.isLoaded && !isTaskListSent) || (liveData?.currentNode?.current === +rack.dropLocation && liveData?.currentNode?.status === 13 && dropLocationAck['given']),
-                        'animate-pulse': (liveData?.currentNode?.current === +rack.dropLocation) && rack.isLoaded && dropLocationAck['given'] && liveData?.currentNode?.status === 13}" class="flex items-center justify-center w-full h-full rounded-[12px] duration-100">
+                        'bg-racks': !rack.isLoaded,
+                        'bg-gray-600': rack.isLoaded && !(liveData?.currentNode?.current === +rack.dropLocation && liveData?.currentNode?.status === 13 && dropLocationAck['given']),
+                        'bg-status-green': rack.isLoaded && (liveData?.currentNode?.current === +rack.dropLocation && liveData?.currentNode?.status === 13 && dropLocationAck['given']),
+                        'animate-pulseCustom': (liveData?.currentNode?.current === +rack.dropLocation) && rack.isLoaded && dropLocationAck['given'] && liveData?.currentNode?.status === 13}" class="flex items-center justify-center w-full h-full rounded-[12px] duration-100">
                     <ranjangaon-icons *ngIf="!rack.isLoaded" [icon]="'rack'" [size]="80" [color]="'#AFAFAF'"></ranjangaon-icons>
 
                     <!-- <div *ngIf="(rack.isLoaded && !isTaskListSent) || (liveData?.currentNode?.current === +rack.dropLocation && liveData?.currentNode?.status === 13 && isAcknowledgementGiven)" class="flex flex-col items-center justify-center gap-2 w-max h-max"> -->
@@ -16,7 +17,7 @@
                         <div class="size-[73px] bg-white flex items-center justify-center pb-3 rounded-[8px]">
                             <ranjangaon-icons class="mt-3" [icon]="'location'" [size]="48" [color]="colors.primary"></ranjangaon-icons>
                         </div>
-                        <p [ngClass]="{'text-white': (liveData?.currentNode?.current === +rack.dropLocation && isTaskListSent && dropLocationAck['given']) || (rack.isLoaded && !isTaskListSent)}" class="text-[40px] font-medium">LOC - {{rack.dropLocation < 10 ? '0'+rack.dropLocation : rack.dropLocation}}</p>
+                        <p [ngClass]="{'text-white': (liveData?.currentNode?.current === +rack.dropLocation && dropLocationAck['given']) || (rack.isLoaded)}" class="text-[40px] font-medium">LOC - {{rack.dropLocation < 10 ? '0'+rack.dropLocation : rack.dropLocation}}</p>
                     </div>
 
                 </button>
@@ -370,7 +371,7 @@
 </fleet-popup>
 
 <!-- Task-Transition popup-->
-<fleet-popup *ngIf="liveData?.currentNode?.status !== 13 && liveData?.currentNode?.current !== configuration?.nodes?.homeNode &&  liveData?.currentNode?.current !== configuration?.nodes?.chargingNode" [isClose]="false" [title]="'Robot Moving!!'">
+<fleet-popup *ngIf="liveData?.currentNode?.status !== 13 && liveData?.currentNode?.current !== configuration?.nodes?.homeNode &&  liveData?.currentNode?.current !== configuration?.nodes?.chargingNode && liveData?.currentNode?.current !== 0" [isClose]="false" [title]="'Robot Moving!!'">
     <div class="flex items-center justify-start w-full gap-6 mt-6 h-max">
         <div class="min-w-[110px] h-[110px] bg-primary flex items-center justify-center rounded-[12px]">
             <ranjangaon-icons [icon]="'robot'" [size]="64" [color]="'#FFF'"></ranjangaon-icons>
@@ -397,7 +398,7 @@
             <ranjangaon-icons [icon]="'turn'" class="animate-inPlaceRotation" [size]="120" [color]="colors.dialogIcon"></ranjangaon-icons>
         </div>
 
-        <p class="text-[20px] mt-4 leading-[45px]">Robot is rotating in th current location.</p>
+        <p class="text-[20px] mt-4 leading-[45px]">Robot is rotating in the current location.</p>
 
         <span class="w-full mt-6">
             <p class="text-[22px] font-semibold text-primary">Note</p>

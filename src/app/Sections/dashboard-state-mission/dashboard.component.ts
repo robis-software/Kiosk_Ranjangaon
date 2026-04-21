@@ -92,7 +92,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     createdTaskList:any = {};
     skippedTaskList:any = {};
     taskList:number[] = [];
-    isTaskListSent:boolean = false;
 
     // Robot State
     currentState!:RobotState;
@@ -215,23 +214,23 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     private monitorStatus() {
         this.pickLocations = this.ss.getItem('_pickLocation') ?? [];
-        // console.log(this.pickLocations);
+        console.log(this.pickLocations);
 
         // // This logic initially send the pick tasks to the robot, but it need to be implemented in IDLE state - For better understanding and better code quality
-        // if(this.pickLocations && this.pickLocations.length !== 0) {
-        //     this.pickLocations = this.ss.getItem('_pickLocation');
-        //     this.print.log('Pick Location Already Exists =>', this.pickLocations);
-        //     this.isPickTaskSent = true;
-        //     this.isDropTaskSent = false;
-        // }
-        // else {
-        //     this.pickLocations = this.generatePickLocations();
-        //     this.print.log('Pick Location were generated =>', this.pickLocations);
-        //     this.ss.setItem('_pickLocation', this.pickLocations);
-        //     this.pickLocations = this.generatePickLocations();
-        //     this.sendPickTasksToRobot(this.pickLocations);
-        //     this.setRefencePoint();
-        // }
+        if(this.pickLocations && this.pickLocations.length !== 0) {
+            this.pickLocations = this.ss.getItem('_pickLocation');
+            this.print.log('Pick Location Already Exists =>', this.pickLocations);
+            this.isPickTaskSent = true;
+            this.isDropTaskSent = false;
+        }
+        else {
+            this.pickLocations = this.generatePickLocations();
+            this.print.log('Pick Location were generated =>', this.pickLocations);
+            this.ss.setItem('_pickLocation', this.pickLocations);
+            this.pickLocations = this.generatePickLocations();
+            this.setRefencePoint();
+            this.sendPickTasksToRobot(this.pickLocations);
+        }
 
         this.subscription = this.liveStream.serverEvent$.subscribe(async(data:any) => {
             if(data?.live) {
@@ -286,6 +285,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                         ? RobotState.TASK_SENT
                         : RobotState.IDLE
                     )
+                    this.ss.setItem('_pickLocation', []);
                     this.isPickTaskSent = false;
                     this.isDropTaskSent = false;
                     this.charging['disconnectedAckGiven'] = false
@@ -295,20 +295,20 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.isPickTaskSent = false;
                     this.isDropTaskSent = false;
                 }
-                // else {
-                //     const nodes = this.generatePickLocations();
-                //     this.sendPickTasksToRobot(nodes);
-                // }
+                else if(!this.isPickTaskSent) {
+                    const nodes = this.generatePickLocations();
+                    this.sendPickTasksToRobot(nodes);
+                }
                 // Pick task initialization — guarded by session storage
                 // If pickLocations exists in SS, tasks were already sent (even across reloads)
-                else if(!this.pickLocations || this.pickLocations.length === 0) {
-                    this.pickLocations = this.generatePickLocations();
-                    this.ss.setItem('_pickLocation', this.pickLocations);
-                    this.sendPickTasksToRobot(this.pickLocations);
-                    this.setRefencePoint();
-                    this.isPickTaskSent = true;
-                    this.isDropTaskSent = false;
-                }
+                // else if(!this.pickLocations || this.pickLocations.length === 0) {
+                //     this.pickLocations = this.generatePickLocations();
+                //     this.ss.setItem('_pickLocation', this.pickLocations);
+                //     this.sendPickTasksToRobot(this.pickLocations);
+                //     this.setRefencePoint();
+                //     this.isPickTaskSent = true;
+                //     this.isDropTaskSent = false;
+                // }
                 break;
 
             case RobotState.TASK_READY:
@@ -355,7 +355,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 const condition = data?.currentNode?.current === nodes?.homeNode;
 
                 if(!condition) {
-                    this.print.log('Pick location ACK is Set False', this.pickLocationAck['given']);
                     this.setState(RobotState.WAITING_PICK_ACK);
                     this.startAcknowledgementTimer();
                     this.setType('PICK');
@@ -363,9 +362,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 else if(condition && !this.isPickTaskSent) {
                     // This will be only triggered, when the robot gets home location task
                     if(await this.taskAPI.completeTask(data?.currentNode?.current)) {
+                        this.print.log('From Arrived_PICK =>', {condition, pickBoolState: this.isPickTaskSent});
                         this.print.log('Task Completed Automatically in the location =>', data?.currentNode.current);
-                        this.setState(RobotState.IDLE);
                         this.setRefencePoint();
+                        this.setState(RobotState.IDLE);
                         return;
                     }
 
@@ -453,15 +453,16 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.ss.setItem('_pickLocation', this.pickLocations);
 
                     if(this.pickLocations.length === 0){
-                        this.pickAPI.completeTask(this.liveData?.currentNode?.current);
+                        // this.pickAPI.completeTask(this.liveData?.currentNode?.current);
 
                         this.createdTaskList = this.fetchTaskListFromSS();
                         // This is checked when there is no empty task list
                         if(this.isTaskListEmpty(this.createdTaskList) ) {
-                            await this.taskAPI.createTask([nodes?.homeNode]); // Consider it as a normal homeNode Task and not as pick task
-                            this.setType('IDLE');
                             this.isPickTaskSent = false;
                             this.isDropTaskSent = false;
+                            await this.taskAPI.createTask([nodes?.homeNode]); // Consider it as a normal homeNode Task and not as pick task
+                            this.ss.setItem('_pickLocation', []);
+                            this.setType('IDLE');
                             this.setState(RobotState.TASK_SENT);
                         }
                         else {
@@ -508,6 +509,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.charging['disconnectedAckGiven'] = true
                     this.isPickTaskSent = false;
                     this.isDropTaskSent = false;
+                    this.ss.setItem('_pickLocation', []);
                     this.charging['reached'] = false;
                     this.charging['taskSent'] = false;
 

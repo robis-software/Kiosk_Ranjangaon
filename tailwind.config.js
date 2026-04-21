@@ -31,7 +31,8 @@ module.exports = {
         slideIn: 'slideIn 0.4s ease-in-out forwards',
         slideOut: 'slideOut 0.4s ease-in-out forwards',
         arrowAnimation: 'arrowMoving 1s ease-in-out forwards infinite',
-        inPlaceRotation: 'rotating 3s linear forwards infinite'
+        inPlaceRotation: 'rotating 3s linear forwards infinite',
+        pulseCustom: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
       },
       keyframes: {
         screenSaverIn: {
@@ -65,6 +66,11 @@ module.exports = {
         rotating: {
             '0%': { transform: 'rotate(0deg)' },
             '100%': { transform: 'rotate(360deg)'},
+        },
+        pulseCustom: {
+            '50%': {
+                opacity: .7
+            }
         }
       }
     },
