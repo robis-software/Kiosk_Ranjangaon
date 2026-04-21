@@ -215,7 +215,7 @@ class NavitrolClientController {
                 date:new Date().toLocaleTimeString().split(' ')[0],
                 live,
                 localisation, 
-                battery: 92, 
+                battery: battery, 
                 speed: speed < 0  ? (-speed) : speed, 
                 currentNode
             };
