@@ -125,11 +125,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     isPickTaskSent:boolean = false;
     isDropTaskSent:boolean = false;
 
-    // Transitions
-    transition = {
-        prevNode: 0,
-        currentNode: 0
-    }
+    // In Place Rotation
+    isRobotRotating:boolean = false;
+    robotRotationTimer:any;
 
     constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly router:Router, private readonly liveStream:SseService, private readonly cdf:ChangeDetectorRef, private readonly logs:LogsService, private readonly notification:NotificationService) {
         this.chargeAPI = new TasksCore(this.api, this.logs, 'Charge');
@@ -530,14 +528,49 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     // 2. SendTaskToTheRobot
     // ===================================================================================================
 
+    /**
+     * This id used to rotate the robot in the point, it only makes the robot to rotate 180 Deg
+     */
     rotateInplace() {
         this.api.post('navitrol/rotate-180', {}).subscribe({
             next: (res:any) => {
                 this.print.log("Rotate 180deg API Response", res);
+                this.isRobotRotating = true;
+                this.isRobotStillRotating();
             },
             error: (error:any) => {
                 this.print.error('Create Task API Error', error);
             }
+        })
+    }
+
+    /**
+     * Function Used to monitor the rotation status for until the rotation is completed.\\\\\\\\\\\\
+     */
+    private isRobotStillRotating() {
+        this.robotRotationTimer = setInterval(async()=>{
+            this.isRobotRotating = await this.rotate_180_status();
+            if(!this.isRobotRotating) {
+                clearInterval(this.robotRotationTimer);
+            }
+        }, 1000)
+    }
+
+    /**
+     * Used to check whether the robot is rotating or not
+     * @returns boolean
+     */
+    private rotate_180_status():Promise<boolean> {
+        return new Promise((resolve, reject)=> {
+            this.api.get('navitrol/rotate-180/status', {}).subscribe({
+                next: (response:any) => {
+                    resolve(response.data)
+                },
+                error: (error:any) => {
+                    this.print.error('Error Happened while checking the robot is rotating or not ',error);
+                    resolve(false);
+                }
+            })
         })
     }
 
