@@ -55,17 +55,17 @@
             <!-- <button (click)="localizeRobot()" class="w-[150px] h-[65px] rounded-[6px] bg-lavender flex items-center justify-center text-white font-normal text-[20px]">Localise</button> -->
         </div>
 
-        <div class="flex items-center justify-end w-full gap-3 h-max">
-            <button (click)="rotateInplace()" *ngIf="liveData?.currentNode?.current === 13 || liveData?.currentNode?.current === configuration?.nodes?.homeNode" class="size-[110px] rounded-[6px] bg-[#263238] flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
+        <div class="flex items-center justify-end w-full gap-5 h-max">
+            <button (click)="rotateInplace()" *ngIf="liveData?.currentNode?.current === 13 || liveData?.currentNode?.current === configuration?.nodes?.homeNode" class="size-[130px] rounded-[6px] bg-[#263238] flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
                 <ranjangaon-icons [icon]="'turn'" [size]="40" [color]="'#FFF'"></ranjangaon-icons>
                 <!-- Rotate  -->
             </button>
 
-            <button *ngIf="getCurrentPickTaskLoationsLen() === 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[110px] rounded-[6px] bg-status-green flex gap-1 flex-col items-center justify-center text-white font-normal text-[22px] animate-slideFromDown">
+            <button *ngIf="getCurrentPickTaskLoationsLen() === 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[130px] rounded-[6px] bg-status-green flex gap-1 flex-col items-center justify-center text-white font-normal text-[22px] animate-slideFromDown">
                 Start
             </button>
 
-            <button *ngIf="getCurrentPickTaskLoationsLen() !== 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[110px] rounded-[6px] bg-lavender flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
+            <button *ngIf="getCurrentPickTaskLoationsLen() !== 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[130px] rounded-[6px] bg-lavender flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
                 <ranjangaon-icons [icon]="'skip'" [size]="40" [color]="'#FFF'"></ranjangaon-icons>
             </button>
         </div>
@@ -352,7 +352,7 @@
 
 <!-- Task-Transition popup-->
 <fleet-popup *ngIf="liveData?.currentNode?.status !== 13 && liveData?.currentNode?.current !== configuration?.nodes?.homeNode &&  liveData?.currentNode?.current !== configuration?.nodes?.chargingNode" [isClose]="false" [title]="'Robot Moving!!'">
-    <div class="flex items-center justify-start gap-6 w-full h-max mt-6">
+    <div class="flex items-center justify-start w-full gap-6 mt-6 h-max">
         <div class="min-w-[110px] h-[110px] bg-primary flex items-center justify-center rounded-[12px]">
             <ranjangaon-icons [icon]="'robot'" [size]="64" [color]="'#FFF'"></ranjangaon-icons>
         </div>
@@ -362,7 +362,7 @@
         </div>
 
         <div class="flex items-center justify-between w-full h-[110px] border-2 border-lightGray rounded-[14px] bg-white p-6">
-            <span class="flex flex-col items-start justify-center gap-2">
+            <span class="flex flex-col items-start justify-center">
                 <p class="text-[14px] text-darkAsh">Arriving to</p>
                 <p class="text-[40px] text-black font-semibold mt-2">{{liveData?.currentNode?.current ? liveData?.currentNode?.current < 10 ? ('LOC - 0'+liveData?.currentNode?.current): ('LOC - '+liveData?.currentNode?.current) : '--'}}</p>
             </span>
