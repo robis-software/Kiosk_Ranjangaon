@@ -57,7 +57,7 @@
         </div>
 
         <div class="flex items-center justify-end w-full gap-5 h-max">
-            <button (click)="rotateInplace()" *ngIf="liveData?.currentNode?.current === 13 || liveData?.currentNode?.current === configuration?.nodes?.homeNode" class="size-[130px] rounded-[6px] bg-[#263238] flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
+            <button (click)="rotateInplace()" *ngIf="liveData?.currentNode?.status === 13 || liveData?.currentNode?.current === configuration?.nodes?.homeNode" class="size-[130px] rounded-[6px] bg-[#263238] flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
                 <ranjangaon-icons [icon]="'turn'" [size]="40" [color]="'#FFF'"></ranjangaon-icons>
                 <!-- Rotate  -->
             </button>
@@ -98,7 +98,7 @@
         </div> -->
 
         <div class="z-40 flex items-center justify-center w-full gap-5 -mt-10 h-max">
-            <button (click)="((localisationScore > configuration.localisation.min) && localisationStatus !== 207) ? closeLocalize() :localizeRobot()" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button (click)="((localisationScore > configuration.localisation.min) && localisationStatus !== 207) ? closeLocalize() : localizeRobot()" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 {{localisationScore > configuration.localisation.min ? 'Continue' : 'Localize Again'}}
             </button>
         </div>
@@ -122,7 +122,6 @@
 
     </div>
 </fleet-popup>
-
 
 <!-- ========================================================================================================== -->
 <!-- User Action based Dialog box -->
