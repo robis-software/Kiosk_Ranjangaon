@@ -98,7 +98,7 @@
         </div> -->
 
         <div class="z-40 flex items-center justify-center w-full gap-5 -mt-10 h-max">
-            <button (click)="((localisationScore > configuration.localisation.min) && localisationStatus !== 207) ? closeLocalize() : localizeRobot()" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button (click)="localisationStatus !== 207 ? closeLocalize() : localizeRobot()" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 {{localisationScore > configuration.localisation.min ? 'Continue' : 'Localize Again'}}
             </button>
         </div>
