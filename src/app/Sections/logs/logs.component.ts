@@ -33,7 +33,7 @@ export class LogsComponent implements OnInit {
             this.fetchLogsList();
         }
         else {
-            this.router.navigate(['/logs'])
+            this.router.navigate(['/authenicate'])
         }
     }
 

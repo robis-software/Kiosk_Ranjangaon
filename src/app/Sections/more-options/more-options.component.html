@@ -1,0 +1,29 @@
+<div class="flex flex-col items-start justify-start w-full h-full gap-4 pb-4 animate-slideFromDown">
+    <div class="flex items-center justify-between w-full mt-8 h-max">
+        <fleet-title [title]="'Options'" [subTitle]="'Contains the configuration and logs of the robot'" [type]="1"></fleet-title>
+
+        <button [routerLink]="'/'" class="size-[62px] rounded-[6px] bg-primary flex items-center justify-center">
+            <ranjangaon-icons [icon]="'home'" [size]="34" [color]="'#FFFFFF'"></ranjangaon-icons>
+        </button>
+    </div>
+
+    <div class="w-full h-full mt-4 overflow-scroll">
+        <div class="grid w-full grid-cols-3 gap-4 h-max">
+            <button [routerLink]="'/configuration'" routerLinkActive="router-link-active" class="w-full h-[130px] border-2 border-lightGray rounded-[14px] flex flex-col justify-start items-start gap-3 p-6 text-[24px] font-medium text-darkAsh">
+                <div class="size-[50px] min-h-[50px] border-2 border-lightGray rounded-[6px] flex items-center justify-center">
+                    <ranjangaon-icons [icon]="'config'" [size]="30" [color]="'#DA2127'"></ranjangaon-icons>
+                </div>
+                Configuration
+            </button>
+
+            <button [routerLink]="'/logs/list'" routerLinkActive="router-link-active" class="w-full h-[130px] border-2 border-lightGray rounded-[14px] flex flex-col justify-start items-start gap-3 p-6 text-[24px] font-medium text-darkAsh">
+                <div class="size-[50px] min-h-[50px] border-2 border-lightGray rounded-[6px] flex items-center justify-center">
+                    <ranjangaon-icons [icon]="'logs'" [size]="30" [color]="'#DA2127'"></ranjangaon-icons>
+                </div>
+                Logs
+            </button>
+
+        </div>
+    </div>
+
+</div>

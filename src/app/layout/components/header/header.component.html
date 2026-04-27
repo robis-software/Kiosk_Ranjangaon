@@ -1,25 +1,19 @@
 <div class="flex items-end justify-between w-screen h-[70px] px-5 gap-4 duration-1000">
 
   <!-- Robot Name -->
-  <div class="flex items-center justify-start gap-2 p-3 w-[250px] h-[50px] border-2 border-lightGray rounded-[6px]">
+  <div class="flex items-center justify-start gap-2 p-3 w-[200px] h-[50px] border-2 border-lightGray rounded-[6px]">
     <ranjangaon-icons [icon]="'robot'" [size]="30" [color]="'#DA2127'"></ranjangaon-icons>
     <p class="text-[20px] font-medium text-darkAsh w-[200px] overflow-ellipsis whitespace-nowrap overflow-hidden">{{config?.name ? config.name : 'Robot Name'}}</p>
   </div>
 
-  <!-- <div class="relative w-full h-full top-[20px]">
-      <div class="absolute grid w-full gap-3 h-max">
-          <div *ngIf="config.battery.min > (liveData ? liveData.battery : 100)" class="flex items-center justify-center gap-2 p-3 w-full h-[50px] border-2 border-status-red rounded-[6px] bg-status-red">
-            <p class="text-[20px] font-normal text-white">Battery Low!</p>
-          </div>
-          <div *ngIf="(liveData ? liveData.localisation.error : false)" class="flex items-center justify-center gap-2 p-3 w-full h-[50px] border-2 border-status-yellow rounded-[6px] bg-status-yellow">
-            <p class="text-[20px] font-normal text-white">Robot De-localized</p>
-          </div>
-      </div>
-  </div> -->
+  <div class="relative w-full h-[52px] border-2 border-lightGray rounded-[6px] flex items-center justify-between p-1">
+        <button (click)="changeModeDialogOpen(1)" [ngClass]="{'bg-status-green text-white': robotActionMode === 1, 'bg-white text-darkAsh': robotActionMode !== 1}" class="text-[20px] font-medium w-full overflow-ellipsis whitespace-nowrap overflow-hidden text-center h-full rounded-[4px] flex items-center justify-center duration-300">Auto</button>
+        <button (click)="changeModeDialogOpen(2)" [ngClass]="{'bg-lavender text-white': robotActionMode === 2, 'bg-white text-darkAsh': robotActionMode !== 2}" class="text-[20px] font-medium w-full overflow-ellipsis whitespace-nowrap overflow-hidden text-center h-full rounded-[4px] flex items-center justify-center duration-300">Manual</button>
+  </div>
 
   <div class="flex items-center justify-center gap-4 w-max h-[50px]">
-    <button (click)="goToLogs()" class="flex items-center justify-center size-[50px] rounded-[6px] bg-lavender">
-      <ranjangaon-icons [icon]="'logs'" [size]="26" [color]="'#FFFFFF'"></ranjangaon-icons>
+    <button (click)="openOptions()" class="flex items-center justify-center size-[50px] rounded-[6px] bg-lavender">
+      <ranjangaon-icons [icon]="'moreOptions'" [size]="30" [color]="'#FFFFFF'"></ranjangaon-icons>
     </button>
 
     <div class="flex items-center justify-start gap-2 px-6 h-[50px] border-2 border-lightGray rounded-[6px]">
@@ -28,3 +22,36 @@
     </div>
   </div>
 </div>
+
+<!-- Inplace Rotation -->
+ <fleet-popup *ngIf="isChangeModeDialogOpen" [isClose]="false" [title]="'Action Needed !'">
+    <div class="flex flex-col items-start justify-start w-full h-max">
+        <div class="flex items-center justify-center w-full gap-10 my-12">
+            <p [ngClass]="{'text-status-green': robotActionMode === 1, 'text-lavender': robotActionMode !== 1}" class="text-[32px] font-semibold flex items-center justify-center w-[170px] py-4 border-2 rounded-[6px] border-lightGray">
+                {{robotActionMode === 1 ? 'Auto' : 'Manual'}}
+            </p>
+
+            <ranjangaon-icons [icon]="'sideArrow'" class="animate-arrowAnimation" [size]="30" [color]="colors.dialogIcon"></ranjangaon-icons>
+
+            <p [ngClass]="{'text-status-green': robotActionMode !== 1, 'text-lavender': robotActionMode === 1}" class="text-[32px] font-semibold flex items-center justify-center w-[170px] py-4 border-2 rounded-[6px] border-lightGray">
+                {{robotActionMode !== 1 ? 'Auto' : 'Manual'}}
+            </p>
+        </div>
+        <p class="text-[20px] mt-4 leading-[45px]">Are you sure you want to switch modes ?</p>
+
+        <span class="w-full mt-6">
+            <p class="text-[22px] font-semibold text-primary">Note</p>
+            <p class="text-[20px] mt-1 leading-[45px]">Switching modes will have different characteristics, Make sure you’re ready for the robot to takeover before proceeding.</p>
+        </span>
+
+        <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
+            <button (click)="isChangeModeDialogOpen = false;" class="w-full h-[78px] border-2 border-primary text-primary flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+                Cancel
+            </button>
+
+            <button (click)="changeMode(selectedModeToSwitch)" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+                Change
+            </button>
+        </div>
+    </div>
+</fleet-popup>

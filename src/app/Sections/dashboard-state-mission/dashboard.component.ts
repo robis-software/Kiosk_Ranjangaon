@@ -1,19 +1,18 @@
-import { AfterViewInit, Component, OnInit, ViewChild, ElementRef, OnDestroy, ChangeDetectorRef} from '@angular/core';
 import Print from '../../Utils/print';
+import TasksCore from '../../core/tasks.core';
+import { AfterViewInit, Component, OnInit, ViewChild, ElementRef, OnDestroy, ChangeDetectorRef} from '@angular/core';
+import { IconsComponent } from "../../Components/icons/icons.component";
+import { CircularIndicatorComponent } from "../../Components/circular-indicator/circular-indicator.component";
 import { SessionStorageService } from '../../Services/session-storage.service';
 import { ApiService } from '../../Services/api.service';
 import { colors } from '../../Utils/colors';
 import { CommonModule } from '@angular/common';
-import { IconsComponent } from "../../Components/icons/icons.component";
-import { CircularIndicatorComponent } from "../../Components/circular-indicator/circular-indicator.component";
 import { Router } from '@angular/router';
 import { PopupComponent } from "../../Components/popup/popup.component";
 import { SseService } from '../../Services/sse.service';
-import { config, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { LogsService } from '../../Services/logs.service';
-import TasksCore from '../../core/tasks.core';
 import { NotificationService } from '../../Services/notification.service';
-
 enum RobotState {
     IDLE, // 0
     TASK_READY, // 1
@@ -128,6 +127,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     isRobotRotating:boolean = false;
     robotRotationTimer:any;
 
+    // Robot Mode
+    robotMode:number = 0; // 1 -> Auto || 2 -> Manual
+
     constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly router:Router, private readonly liveStream:SseService, private readonly cdf:ChangeDetectorRef, private readonly logs:LogsService, private readonly notification:NotificationService) {
         this.chargeAPI = new TasksCore(this.api, this.logs, 'Charge');
         this.pickAPI = new TasksCore(this.api, this.logs, 'Pick');
@@ -238,6 +240,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.print.log(data?.currentNode);
             }
             else {
+                this.liveData = {...this.liveData, live: false}
                 this.print.log('Server Offline and no data is coming form navitrol')
             }
             await this.stateMachine(data);
@@ -261,6 +264,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     private async stateMachine(data:any) {
         const nodes:any = this.configuration?.nodes
+
+        // Check the robot mode
+        this.robotMode = this.ss.getItem('robotMode');
+
         switch(this.currentState) {
             case RobotState.IDLE:
                 this.setType('IDLE');

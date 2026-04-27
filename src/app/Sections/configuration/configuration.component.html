@@ -1,0 +1,22 @@
+<div class="flex flex-col items-start justify-start w-full h-full gap-4 pb-4 animate-slideFromDown">
+    <div class="flex items-center justify-between w-full mt-8 h-max">
+        <fleet-title [title]="'Configuration'" [subTitle]="'Configure the robot'" [type]="1"></fleet-title>
+
+        <button [routerLink]="'/options'" class="size-[62px] rounded-[6px] bg-primary flex items-center justify-center">
+            <ranjangaon-icons [icon]="'home'" [size]="34" [color]="'#FFFFFF'"></ranjangaon-icons>
+        </button>
+    </div>
+
+    <div class="flex items-center justify-start w-full gap-3 mt-3 h-max">
+        <button [routerLink]="'/configuration'" [ngClass]="{'bg-primary text-white border-primary': isGeneralActive(), 'bg-white text-black border-lightGray': !isGeneralActive()}" class="text-[20px] border-2 w-[140px] h-[55px] rounded-[6px] duration-300">
+            General
+        </button>
+
+        <button [routerLink]="'/configuration/location'" [ngClass]="{'bg-primary text-white border-primary': isLocationsActive(), 'bg-white text-black border-lightGray': !isLocationsActive()}"  class="text-[20px] border-2 w-[140px] h-[55px] rounded-[6px] duration-300">
+            Locations
+        </button>
+    </div>
+
+    <router-outlet></router-outlet>
+</div>
+

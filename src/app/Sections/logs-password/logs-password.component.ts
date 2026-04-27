@@ -81,10 +81,10 @@ export class LogsPasswordComponent implements OnInit {
                 this.password.length = 0;
                 if(response.data) {
                     this.ss.setItem('_authenication', response.data)
-                    this.router.navigate(['/logs/list']);
+                    this.router.navigate(['/options']);
                 }
                 else {
-                    this.router.navigate(['/logs']);
+                    this.router.navigate(['/authenicate']);
 
                 }
 

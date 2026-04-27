@@ -1,0 +1,11 @@
+:root {
+    --primary: #DA2127;
+    --lightGray: #CECECE;
+
+}
+
+.router-link-active {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}

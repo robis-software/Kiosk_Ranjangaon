@@ -1,3 +1,4 @@
+import { LocationComponent } from './Sections/configuration/Routes/location/location.component';
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
@@ -12,7 +13,12 @@ export const routes: Routes = [
     loadComponent: async() => await import("./Sections/rack-select/rack-select.component").then(c => c.RackSelectComponent)
   },
   {
-    path: 'logs',
+    path: 'options',
+    title: 'Options | KIOSK',
+    loadComponent: async() => await import("./Sections/more-options/more-options.component").then(c => c.MoreOptionsComponent)
+  },
+  {
+    path: 'authenicate',
     title: 'Authenicate | KIOSK',
     loadComponent: async() => await import("./Sections/logs-password/logs-password.component").then(c => c.LogsPasswordComponent)
   },
@@ -25,6 +31,23 @@ export const routes: Routes = [
     path: 'logs/view/:id',
     title: 'Logs | KIOSK',
     loadComponent: async() => await import("./Sections/logs-view/logs-view.component").then(c => c.LogsViewComponent)
+  },
+  {
+    path: 'configuration',
+    title: 'Configuration | KIOSK',
+    loadComponent: async() => await import("./Sections/configuration/configuration.component").then(c => c.ConfigurationComponent),
+    children: [
+        {
+            path: '',
+            title: 'Configuration | KIOSK',
+            loadComponent: async() => await import("./Sections/configuration/Routes/general/general.component").then(c => c.GeneralComponent)
+        },
+        {
+            path: 'location',
+            title: 'Configuration | KIOSK',
+            loadComponent: async() => await import("./Sections/configuration/Routes/location/location.component").then(c => c.LocationComponent)
+        }
+    ]
   },
   {
     path: 'disconnected',
