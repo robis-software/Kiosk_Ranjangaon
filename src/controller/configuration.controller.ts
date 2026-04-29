@@ -77,6 +77,10 @@ class ConfigurationController {
                 if (key in existingConfiguration) {
                     existingConfiguration[key] = updatedData[key];
                 }
+                else {
+                    res.status(400).json({ message: `Invalid configuration key: ${key}` });
+                    throw new Error(`Invalid configuration key: ${key}`);
+                }
             });
 
             // Save the updated config
