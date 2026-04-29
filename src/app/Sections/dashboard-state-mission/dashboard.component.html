@@ -243,7 +243,7 @@
                 Skip
             </button>
 
-            <button (click)="clearAcknowledgementTimer()" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button *ngIf="robotMode === 2" (click)="clearAcknowledgementTimer()" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 Acknowledge
             </button>
         </div>

@@ -366,7 +366,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 break;
 
             case RobotState.ARRIVED_PICK:
-                const condition = data?.currentNode?.current === nodes?.homeNode;
+                const condition = data?.currentNode?.current === nodes?.homeNode && this.currentRobotMode() === 2;
 
                 if(!condition) {
                     this.setState(RobotState.WAITING_PICK_ACK);
@@ -760,7 +760,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     skipTask() {
-        if(!this.isTaskSkipped) {
+        if(!this.isTaskSkipped && this.currentRobotMode() === 2) {
             this.skippedTaskList[this.liveData?.currentNode?.current] = this.createdTaskList[this.liveData?.currentNode?.current]
         }
         this.createdTaskList[this.liveData?.currentNode?.current] = undefined;

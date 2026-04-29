@@ -39,11 +39,7 @@ export class GeneralComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.configuration = this.ss.getItem('_config');
-        this.waitingTimer = this.configuration.waitingTime;
-        this.robotSetSpeed = this.configuration.robotSetSpeed;
-
-        this.calculateTime(this.waitingTimer);
+        this.fetchUpdatedConfig();
     }
 
     calculateTime(timeInSeconds:number) {
@@ -84,6 +80,29 @@ export class GeneralComponent implements OnInit {
             body = {robotSetSpeed: this.robotSetSpeed}
         }
         this.updateConfig(body)
+    }
+
+    private initializeConfig() {
+        this.configuration = this.ss.getItem('_config');
+        this.waitingTimer = this.configuration?.waitingTime || 0;
+        this.robotSetSpeed = this.configuration?.robotSetSpeed || 0;
+        this.calculateTime(this.waitingTimer);
+    }
+
+    private fetchUpdatedConfig() {
+        this.api.get('configuration', {}).subscribe({
+            next: (response:any) => {
+                if(response.data) {
+                    this.configuration = response.data;
+                    this.ss.setItem('_config', response.data);
+                    this.print.log('Configuration fetched and Updated in the storage!');
+                    this.initializeConfig();
+                }
+            },
+                error: (error:any) => {
+                this.print.error('Error happened while fetching data from the Configuration', error);
+            }
+        });
     }
 
     private updateConfig(body:any) {

@@ -107,10 +107,12 @@ export class HeaderComponent implements OnInit {
                     this.robotActionMode = this.config?.robotMode || 1;
                     this.ss.setItem('_config', response.data);
                     this.print.log('Configuration fetched and Updated in the storage!');
+                    this.notification.success('Robot Mode Changed', 'Robot mode changed and updated successfully')
                 }
             },
             error: (error:any) => {
                 this.print.error('Error happened while fetching data from the Configuration', error);
+                this.notification.error('Something went wrong', 'Error happenned while changing the robot mode.')
             }
         });
     }
