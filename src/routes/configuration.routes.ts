@@ -6,5 +6,6 @@ const configurationController = new ConfigurationController();
 
 configurationRouter.post('/', configurationController.configure);
 configurationRouter.get('/', configurationController.getConfig);
+configurationRouter.put('/', configurationController.editConfig);
 
 export default configurationRouter;

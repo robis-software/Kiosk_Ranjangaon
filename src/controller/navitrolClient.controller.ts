@@ -58,8 +58,9 @@ class NavitrolClientController {
 
     }
 
-    // Written by Vigneswara - Currently Used
-    // Live Status API
+    /**
+     * Used to get the live data from the robot by calling multiple API at same time
+     */
     monitorLiveDataV1 = (req:Request, res: Response, next:NextFunction) => {
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
@@ -81,7 +82,9 @@ class NavitrolClientController {
         }
     }
 
-    // Get Locations
+    /**
+     * Used to get the location ids that are stored in the robot
+     */
     getLocationSymbolicIds = async(req:Request, res:Response, next:NextFunction) => {
         try {
             const response = await this.fetchData(process.env.LOCATION_LIST);
@@ -93,7 +96,9 @@ class NavitrolClientController {
         }
     }
 
-    // Send Tasks to the Robot
+    /**
+     * Used to send the task list to the robot to execute, and based on the state change the list will be updated, whether in sorted order or in unsorted order
+     */
     sendTaskToRobot = async(req:Request, res:Response, next:NextFunction) => {
         try {
             const response = this.postData(process.env.SEND_TASKS, req.body);
@@ -105,7 +110,9 @@ class NavitrolClientController {
         }
     }
 
-    // Send Task Feedback, to say that the task's completion status
+    /**
+     * Used to send the task completion feedback to the robot.
+     */
     sendTaskFeedback = async (req:Request, res:Response, next:NextFunction) => {
         try {
             const response = await this.postData(process.env.COMPLETE_TASK, {});
@@ -117,7 +124,9 @@ class NavitrolClientController {
         }
     }
 
-    // Initialise Robot
+    /**
+     * Used to localize the robot in the environment
+     */
     initializeRobot = async(req:Request, res:Response, next:NextFunction) => {
         try {
             const response = await this.postData(process.env.LOCALIZE, req.body);
@@ -129,7 +138,9 @@ class NavitrolClientController {
         }
     }
 
-    // Initialise Robot
+    /**
+     * Used to rotate the robot from it position, rotation angle - 180 deg
+     */
     inPlaceRotation = async(req:Request, res:Response, next:NextFunction) => {
         try {
             // No Body
@@ -142,7 +153,9 @@ class NavitrolClientController {
         }
     }
 
-    // In-place rotation API status
+    /**
+     * Used to get the status of the rotation of the robot.
+     */
     inPlaceRotationStatus = async(req:Request, res:Response, next:NextFunction) => {
         try {
            const response = await this.fetchData(process.env.ROTATE_180_STATUS);
@@ -153,7 +166,9 @@ class NavitrolClientController {
         }
     }
 
-    // Set Pick Point
+    /**
+     * Used to set the reference location to the robot
+     */
     setPickLocation = async(req:Request, res:Response, next:NextFunction) => {
         try {
             const response = await this.postData(process.env.PICK_POINT, req.body); 
@@ -165,6 +180,9 @@ class NavitrolClientController {
         }
     }
 
+    /**
+     * Used to get the charging status of the robot.
+     */
     getChargingStatus = async(req:Request, res:Response, next:NextFunction) => {
         try {
             const response = await this.fetchData(process.env.CHARGING_STATUS);
@@ -173,6 +191,20 @@ class NavitrolClientController {
         catch (error) {
             this.print.log('API Call Failed: getChargingStatus() in NavitrolClientController');
             res.status(400).json({message: 'Error Happened while getting charging status of the robot', error});
+        }
+    }
+
+    /**
+     * Used to set the operating speed of the robot.
+     */
+    setRobotSpeed = async(req:Request, res:Response, next:NextFunction) => {
+        try {
+            const response = await this.postData(process.env.ROBOT_SPEED, req.body); 
+            res.status(200).json({message: 'Robot speed has been changed and updated', data: response.data})
+        } 
+        catch (error) {
+            this.print.log('API Call Failed: setRobotSpeed() in NavitrolClientController');
+            res.status(400).json({message: 'Error Happened while configuring operating speed in robot', error});
         }
     }
 
@@ -202,11 +234,12 @@ class NavitrolClientController {
 
     private async liveResponse():Promise<string> {
         try {
-            const [localisation, battery, speed, currentNode] = await Promise.all([
+            const [localisation, battery, speed, currentNode, chargingStaus] = await Promise.all([
                 this.fetchData(process.env.LOCALIZATION),
                 this.fetchData(process.env.BATTERY),
                 this.fetchData(process.env.SPEED),
-                this.fetchData(process.env.CURRENT_NODE)
+                this.fetchData(process.env.CURRENT_NODE),
+                this.fetchData(process.env.CHARGING_STATUS)
             ]);
 
             const live = !!(localisation && (+battery >= 0) && (speed !== null) && currentNode) ;
@@ -217,7 +250,8 @@ class NavitrolClientController {
                 localisation, 
                 battery: battery, 
                 speed: speed < 0  ? (-speed) : speed, 
-                currentNode
+                currentNode,
+                chargingStaus
             };
         
             return JSON.stringify(response);
