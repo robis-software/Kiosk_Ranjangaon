@@ -1,0 +1,31 @@
+.slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 70px;
+  border-radius: 100px;
+  background: #d3d3d3;
+  outline: none;
+  overflow: hidden; /* 🔥 clips the fill */
+  transition: 1s linear all;
+}
+
+/* Track */
+.slider::-webkit-slider-runnable-track {
+  height: 70px;
+  border-radius: 100px;
+  background: transparent; /* important */
+}
+
+/* Thumb */
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 70px;
+  height: 70px;
+  background: white;
+  border-radius: 50%;
+  border: 8px solid #7E6DB2;
+  cursor: pointer;
+  /* 🔥 Fill trick */
+  box-shadow: -1035px 0 0 1000px #7E6DB2;
+  transition: 0.2s linear all;
+}

@@ -18,7 +18,7 @@
 
     <div class="flex items-center justify-start gap-2 px-6 h-[50px] border-2 border-lightGray rounded-[6px]">
       <div [ngClass]="{'bg-status-green': liveData.live, 'bg-status-red': !liveData.live}" class="size-[16px] rounded-full"></div>
-      <p class="text-[20px] font-medium text-black w-[134px]">{{liveData.live ? 'Connected' : 'Disconnected'}}</p>
+      <p class="text-[20px] font-medium text-black w-[65px]">{{liveData.live ? 'Online' : 'Offline'}}</p>
     </div>
   </div>
 </div>

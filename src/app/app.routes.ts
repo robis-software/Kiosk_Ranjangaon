@@ -1,4 +1,3 @@
-import { LocationComponent } from './Sections/configuration/Routes/location/location.component';
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
@@ -35,19 +34,12 @@ export const routes: Routes = [
   {
     path: 'configuration',
     title: 'Configuration | KIOSK',
-    loadComponent: async() => await import("./Sections/configuration/configuration.component").then(c => c.ConfigurationComponent),
-    children: [
-        {
-            path: '',
-            title: 'Configuration | KIOSK',
-            loadComponent: async() => await import("./Sections/configuration/Routes/general/general.component").then(c => c.GeneralComponent)
-        },
-        {
-            path: 'location',
-            title: 'Configuration | KIOSK',
-            loadComponent: async() => await import("./Sections/configuration/Routes/location/location.component").then(c => c.LocationComponent)
-        }
-    ]
+    loadComponent: async() => await import("./Sections/configuration/general/general.component").then(c => c.GeneralComponent)
+  },
+  {
+    path: 'location',
+    title: 'Locations | KIOSK',
+    loadComponent: async() => await import("./Sections/configuration/location/location.component").then(c => c.LocationComponent)
   },
   {
     path: 'disconnected',

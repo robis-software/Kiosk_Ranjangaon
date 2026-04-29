@@ -8,21 +8,27 @@
     </div>
 
     <div class="w-full h-full mt-4 overflow-scroll">
-        <div class="grid w-full grid-cols-3 gap-4 h-max">
-            <button [routerLink]="'/configuration'" routerLinkActive="router-link-active" class="w-full h-[130px] border-2 border-lightGray rounded-[14px] flex flex-col justify-start items-start gap-3 p-6 text-[24px] font-medium text-darkAsh">
+        <div class="grid w-full grid-cols-2 gap-4 h-max">
+            <button [routerLink]="'/configuration'" routerLinkActive="router-link-active" class="w-full h-max border-2 border-lightGray rounded-[14px] flex justify-start items-center gap-3 p-6 text-[24px] font-medium text-darkAsh">
                 <div class="size-[50px] min-h-[50px] border-2 border-lightGray rounded-[6px] flex items-center justify-center">
                     <ranjangaon-icons [icon]="'config'" [size]="30" [color]="'#DA2127'"></ranjangaon-icons>
                 </div>
                 Configuration
             </button>
 
-            <button [routerLink]="'/logs/list'" routerLinkActive="router-link-active" class="w-full h-[130px] border-2 border-lightGray rounded-[14px] flex flex-col justify-start items-start gap-3 p-6 text-[24px] font-medium text-darkAsh">
+            <button [routerLink]="'/location'" routerLinkActive="router-link-active" class="w-full h-max border-2 border-lightGray rounded-[14px] flex justify-start items-center gap-3 p-6 text-[24px] font-medium text-darkAsh">
+                <div class="size-[50px] min-h-[50px] border-2 border-lightGray rounded-[6px] flex items-center justify-center">
+                    <ranjangaon-icons [icon]="'location'" [size]="30" [color]="'#DA2127'"></ranjangaon-icons>
+                </div>
+                Locations
+            </button>
+
+            <button [routerLink]="'/logs/list'" routerLinkActive="router-link-active" class="w-full h-[max border-2 border-lightGray rounded-[14px] flex justify-start items-center gap-3 p-6 text-[24px] font-medium text-darkAsh">
                 <div class="size-[50px] min-h-[50px] border-2 border-lightGray rounded-[6px] flex items-center justify-center">
                     <ranjangaon-icons [icon]="'logs'" [size]="30" [color]="'#DA2127'"></ranjangaon-icons>
                 </div>
                 Logs
             </button>
-
         </div>
     </div>
 

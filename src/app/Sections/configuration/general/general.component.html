@@ -1,0 +1,115 @@
+<div class="flex flex-col items-start justify-start w-full h-full gap-4 pb-4 animate-slideFromDown">
+    <div class="flex items-center justify-between w-full mt-8 h-max">
+        <fleet-title [title]="'Configuration'" [subTitle]="'Configure the robot'" [type]="1"></fleet-title>
+
+        <div class="flex gap-3">
+            <button [routerLink]="'/options'" class="size-[62px] rounded-[6px] bg-lavender flex items-center justify-center">
+                <ranjangaon-icons [icon]="'goBack'" [size]="34" [color]="'#FFFFFF'"></ranjangaon-icons>
+            </button>
+            <button [routerLink]="'/'" class="size-[62px] rounded-[6px] bg-primary flex items-center justify-center">
+                <ranjangaon-icons [icon]="'home'" [size]="34" [color]="'#FFFFFF'"></ranjangaon-icons>
+            </button>
+        </div>
+    </div>
+
+    <div class="w-full h-full mt-5 overflow-scroll">
+        <!-- Acknowlegement Timer configuration -->
+        <button (click)="isTimeEditor = true" class="w-full border-2 border-lightGray rounded-[6px] flex items-start justify-between p-5 cursor-pointer active:bg-lightGray">
+            <!-- Left Side -->
+            <div class="flex flex-col items-start justify-start w-[70%] gap-3">
+                <span class="flex items-center gap-3">
+                    <p class="text-[24px] text-primary font-semibold">Acknowlegement Timer</p>
+                    <ranjangaon-icons [icon]="'edit'" [size]="24" [color]="colors.lavender"></ranjangaon-icons>
+                </span>
+
+                <p class="text-wrap text-[16px] font-normal text-left leading-9">Change the acknowledgement that is asked at the time of arrival at every location</p>
+            </div>
+            <!-- Right-side -->
+            <div class="w-[30%] h-full">
+                <p class="text-[30px] font-semibold text-right">{{time['minutes'] < 10 ? '0'+time['minutes'] : time['minutes']}}:{{time['seconds'] < 10 ? '0'+time['seconds'] : time['seconds']}}s</p>
+            </div>
+        </button>
+
+        <!-- Robot Speed configuration -->
+        <button (click)="isSpeedEditor = true" class="w-full border-2 border-lightGray rounded-[6px] flex items-start justify-between p-5 mt-3 cursor-pointer active:bg-lightGray">
+            <!-- Left Side -->
+            <div class="flex flex-col items-start justify-start w-[70%] gap-3">
+                <span class="flex items-center gap-3">
+                    <p class="text-[24px] text-primary font-semibold">Robot Speed</p>
+                    <ranjangaon-icons [icon]="'edit'" [size]="24" [color]="colors.lavender"></ranjangaon-icons>
+                </span>
+
+                <p class="text-wrap text-[16px] text-left font-normal leading-9">Change the robot maximum speed value</p>
+            </div>
+            <!-- Right-side -->
+            <div class="w-[30%] h-full">
+                <p class="text-[30px] font-semibold text-right">{{robotSetSpeed.toFixed(2)}}m/s</p>
+            </div>
+        </button>
+
+        <!-- <div class="flex flex-col items-center justify-start w-full gap-1 h-max">
+            <input type="range" name="slider" id="slider" class="mt-10 slider" [step]="20" [value]="0">
+        </div> -->
+    </div>
+</div>
+
+
+<fleet-popup *ngIf="isTimeEditor" [isClose]="false" [title]="'Acknowledgement Timer'">
+    <div class="flex flex-col items-start justify-start w-full h-max">
+
+        <div class="w-full h-[250px] mt-4 flex flex-col items-center justify-center relative animate-slideFromDown">
+            <p class="text-[96px] font-semibold text-black w-[295px]">{{time['minutes'] < 10 ? '0'+time['minutes'] : time['minutes']}}:{{time['seconds'] < 10 ? '0'+time['seconds'] : time['seconds']}}</p>
+            <p class="text-[40px] text-primary font-medium -mt-5">{{time['minutes'] === 0 ? 'Sec' : 'Min'}}</p>
+        </div>
+
+        <div class="flex flex-col items-center justify-start w-full gap-1 h-max animate-slideFromDown">
+            <input type="range" name="slider" id="slider" min="10" max="300" [value]=this.configuration.waitingTime class="mt-10 slider" [step]="2" (input)="rangeInput($event, 0, 300, 'ackTimer')">
+            <div class="flex items-center justify-between w-[calc(100%-65px)] mt-0.5 animate-slideFromDown">
+                @for (item of range(6); track $index) {
+                    <p class="text-[16px] ">|</p>
+                }
+            </div>
+        </div>
+
+        <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
+            <button (click)="isTimeEditor = false; calculateTime(configuration.waitingTime)" class="w-full h-[78px] border-2 border-primary text-primary flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+                Close
+            </button>
+
+            <button (click)="updateConfigParams('ackTimer')" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+                Update
+            </button>
+        </div>
+    </div>
+
+</fleet-popup>
+
+<fleet-popup *ngIf="isSpeedEditor" [isClose]="false" [title]="'Robot Speed'">
+    <div class="flex flex-col items-start justify-start w-full h-max">
+
+        <div class="w-full h-[250px] mt-4 flex flex-col items-center justify-center relative animate-slideFromDown">
+            <p class="text-[96px] text-center font-semibold text-black w-[295px] duration-1000">{{robotSetSpeed.toFixed(2)}}</p>
+            <p class="text-[40px] -mt-5 text-primary font-medium">m/s</p>
+        </div>
+
+        <div class="flex flex-col items-center justify-start w-full gap-1 h-max animate-slideFromDown">
+            <input type="range" name="slider" id="speedSlider" min="0.05" [max]=configuration.robotMaxSpeed [value]=this.configuration.robotSetSpeed class="mt-10 slider" [step]="0.05" (input)="rangeInput($event, 0, 300, 'speed')">
+            <div class="flex items-center justify-between w-[calc(100%-65px)] mt-0.5 animate-slideFromDown">
+                @for (item of range(6); track $index) {
+                    <p class="text-[16px] ">|</p>
+                }
+            </div>
+        </div>
+
+        <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
+            <button (click)="isSpeedEditor = false; robotSetSpeed = configuration.robotSetSpeed" class="w-full h-[78px] border-2 border-primary text-primary flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+                Close
+            </button>
+
+            <button (click)="updateConfigParams('speed')" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+                Update
+            </button>
+        </div>
+    </div>
+
+</fleet-popup>

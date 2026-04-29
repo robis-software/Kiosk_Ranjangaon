@@ -8,6 +8,7 @@ import { SessionStorageService } from '../../../Services/session-storage.service
 import { SseService } from '../../../Services/sse.service';
 import { NotificationService } from '../../../Services/notification.service';
 import { PopupComponent } from "../../../Components/popup/popup.component";
+import { ApiService } from '../../../Services/api.service';
 
 @Component({
   selector: 'ranjangaon-header',
@@ -32,7 +33,7 @@ export class HeaderComponent implements OnInit {
 
     isChangeModeDialogOpen:boolean = false;
 
-    constructor(private readonly ss:SessionStorageService, private readonly router:Router, private readonly stream:SseService, private readonly notification:NotificationService){
+    constructor(private readonly ss:SessionStorageService, private readonly router:Router, private readonly stream:SseService, private readonly notification:NotificationService, private readonly api:ApiService){
         this.print = new Print();
         this.colors = colors;
     }
@@ -41,19 +42,19 @@ export class HeaderComponent implements OnInit {
         this.setMode();
         this.stream.serverEvent$.subscribe((data:any)=> {
             this.liveData = data;
-            this.robotActionMode = this.ss.getItem('robotMode');
+            this.robotActionMode = this.currentRobotMode();
             // this.print.log('From Header =>', this.liveData)
         })
         this.recursiveTry();
     }
 
     private setMode() {
-        const robotMode:number = this.ss.getItem('robotMode');
-        if(robotMode === null || robotMode === undefined) {
-            this.ss.setItem('robotMode', 1); // => Initially it is set as 1, Manual mode
+        // Forcing the logic to set the robot to mannaul mode initially
+        if(this.currentRobotMode() === 1) {
+            this.setRobotMode(2);
         }
         else {
-            this.robotActionMode = robotMode;
+            this.robotActionMode = this.currentRobotMode();
         }
     }
 
@@ -93,10 +94,29 @@ export class HeaderComponent implements OnInit {
     }
 
     changeMode(mode:number) {
-        this.ss.setItem('robotMode', mode);
-        this.robotActionMode = this.ss.getItem('robotMode');
+        this.setRobotMode(mode);
         this.isChangeModeDialogOpen = false;
-        this.print.log('Mode Changed to =>', mode);
+        this.print.log('Mode Changed to =>', this.robotActionMode);
     }
 
+    private setRobotMode(mode:number) {
+        this.api.put('configuration', {robotMode: mode}, {authorization: 'Bearer Robis-motherson@123'}).subscribe({
+            next: (response:any) => {
+                if(response.data) {
+                    this.config = response.data;
+                    this.robotActionMode = this.config?.robotMode || 1;
+                    this.ss.setItem('_config', response.data);
+                    this.print.log('Configuration fetched and Updated in the storage!');
+                }
+            },
+            error: (error:any) => {
+                this.print.error('Error happened while fetching data from the Configuration', error);
+            }
+        });
+    }
+
+    private currentRobotMode():number {
+        const config = this.ss.getItem('_config');
+        return config?.robotMode || 1;
+    }
 }

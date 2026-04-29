@@ -130,6 +130,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     // Robot Mode
     robotMode:number = 0; // 1 -> Auto || 2 -> Manual
 
+    time:any = {
+        minutes: 0,
+        seconds: 0
+    }
+
     constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly router:Router, private readonly liveStream:SseService, private readonly cdf:ChangeDetectorRef, private readonly logs:LogsService, private readonly notification:NotificationService) {
         this.chargeAPI = new TasksCore(this.api, this.logs, 'Charge');
         this.pickAPI = new TasksCore(this.api, this.logs, 'Pick');
@@ -151,6 +156,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             this.print.log('No Configuration is there to use!')
             return
         }
+
+        this.robotMode = this.configuration?.robotMode;
 
         this.monitorStatus();
         this.ss.removeItem("_authenication");
@@ -266,7 +273,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         const nodes:any = this.configuration?.nodes
 
         // Check the robot mode
-        this.robotMode = this.ss.getItem('robotMode');
+        this.robotMode = this.currentRobotMode();
 
         switch(this.currentState) {
             case RobotState.IDLE:
@@ -535,6 +542,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     // Functional APIs
     // 1. In-place rotation API
     // 2. SendTaskToTheRobot
+    // 3. In-palce rotation status API
     // ===================================================================================================
 
     /**
@@ -689,6 +697,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
                 else {
                     this.timer-=1
+                    this.calculateTime(this.timer);
                 }
             }, 1000)
         }
@@ -1087,4 +1096,25 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         const pickLocations:number[] = this.ss.getItem('_pickLocation') ?? [];
         return pickLocations.length;
     }
+
+    private calculateTime(timeInSeconds:number) {
+        if(timeInSeconds < 59) {
+            this.time['minutes'] = 0;
+            this.time['seconds'] = timeInSeconds;
+        }
+        else {
+            this.time['minutes'] = Math.trunc(timeInSeconds / 60);
+            this.time['seconds'] = timeInSeconds % 60;
+        }
+    }
+
+    // ===================================================================================================
+    // Utils Function
+    // ===================================================================================================
+
+    private currentRobotMode():number {
+        const config = this.ss.getItem('_config');
+        return config?.robotMode || 1;
+    }
+
 }

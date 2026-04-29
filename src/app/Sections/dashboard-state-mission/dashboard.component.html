@@ -46,6 +46,13 @@
                 <p class="text-[28px] font-semibold text-black pl-2">{{liveData?.battery >= 0 ? liveData?.battery : '--'}}%</p>
             </div>
 
+            <div class="size-[130px] border-2 border-lightGray rounded-[8px] flex flex-col p-2 gap-1 relative">
+                <ranjangaon-circular-indicator [angle]="360" [size]="70" [color]="batteryIndicatorColor(liveData?.temperature>= 0 ? liveData?.temperature : 0)" [data]="liveData?.battery >= 0 ? liveData?.temperature : 0" [rotate]="-90">
+                    <ranjangaon-icons [icon]="'temperature'" [size]="24" [color]="colors.darkAsh"></ranjangaon-icons>
+                </ranjangaon-circular-indicator>
+                <p class="text-[28px] font-semibold text-black pl-2">{{liveData?.temperature >= 0 ? liveData?.temperature : '--'}}°C</p>
+            </div>
+
             <div class="size-[130px] border-2 border-lightGray rounded-[8px] flex flex-col p-2 gap-1">
                 <ranjangaon-circular-indicator [angle]="270" [size]="70" [color]="colors.lavender" [data]="liveData?.speed >=0 ? (liveData?.speed/(configuration?.robotMaxSpeed ? configuration?.robotMaxSpeed : 2))*100 : 0" [rotate]="135">
                     <ranjangaon-icons [icon]="'speed'" [size]="16" [color]="colors.darkAsh"></ranjangaon-icons>
@@ -67,7 +74,7 @@
             </button>
 
             <button *ngIf="getCurrentPickTaskLoationsLen() !== 1 && type !== 'DROP'" (click)="skipPickLocation()" class="size-[130px] rounded-[6px] bg-lavender flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
-                <ranjangaon-icons [icon]="'skip'" [size]="40" [color]="'#FFF'"></ranjangaon-icons>
+                <ranjangaon-icons [icon]="'skip'" [size]="50" [color]="'#FFF'"></ranjangaon-icons>
             </button>
         </div>
     </div>
@@ -219,8 +226,9 @@
     <div *ngIf="!dropLocationAck['skip']" class="flex flex-col items-start justify-start w-full translate-x-full h-max animate-slideIn">
 
         <div class="w-full h-[350px] mt-4 flex flex-col items-center justify-center relative">
-            <p class="text-[96px] font-semibold text-black w-[295px]">00:{{timer < 10 ? '0'+timer : timer}}</p>
-            <p class="text-[40px] text-primary font-medium">Sec</p>
+            <!-- <p class="text-[96px] font-semibold text-black w-[295px]">00:{{timer < 10 ? '0'+timer : timer}}</p> -->
+            <p class="text-[96px] font-semibold text-black w-[295px]">{{time['minutes'] < 10 ? '0'+time['minutes'] : time['minutes']}}:{{time['seconds'] < 10 ? '0'+time['seconds'] : time['seconds']}}</p>
+            <p class="text-[40px] text-primary font-medium">{{time['minutes'] === 0 ? 'Sec' : 'Min'}}</p>
         </div>
 
         <p class="text-[20px] mt-4 leading-[45px]">Tap Acknowledge to begin unloading the materials at this location.</p>
@@ -404,4 +412,4 @@
             <p class="text-[20px] mt-1 leading-[45px]">After rotation is getting completed, Next action will be executed.</p>
         </span>
     </div>
-</fleet-popup>s
+</fleet-popup>

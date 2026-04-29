@@ -35,10 +35,10 @@ export class LogsPasswordComponent implements OnInit {
         const isAuthenicated = this.ss.getItem('_authenication');
 
         if(isAuthenicated) {
-            this.router.navigate(['/logs/list']);
+            this.router.navigate(['/options']);
         }
         else {
-            this.router.navigate(['/logs'])
+            this.router.navigate(['/authenicate']);
         }
     }
 

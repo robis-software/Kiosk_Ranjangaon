@@ -1,0 +1,18 @@
+<div class="flex flex-col items-start justify-start w-full h-full gap-4 pb-4 animate-slideFromDown">
+    <div class="flex items-center justify-between w-full mt-8 h-max">
+        <fleet-title [title]="'Locations'" [subTitle]="'Include or Exclude a location from the robot.'" [type]="1"></fleet-title>
+
+        <div class="flex gap-3">
+            <button [routerLink]="'/options'" class="size-[62px] rounded-[6px] bg-lavender flex items-center justify-center">
+                <ranjangaon-icons [icon]="'goBack'" [size]="34" [color]="'#FFFFFF'"></ranjangaon-icons>
+            </button>
+            <button [routerLink]="'/'" class="size-[62px] rounded-[6px] bg-primary flex items-center justify-center">
+                <ranjangaon-icons [icon]="'home'" [size]="34" [color]="'#FFFFFF'"></ranjangaon-icons>
+            </button>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-center w-full h-full">
+        <p class="text-[36px] font-semibold text-lightGray text-wrap line-clamp-2 w-[400px] text-center animate-pulse">Under Development Progress...</p>
+    </div>
+</div>
