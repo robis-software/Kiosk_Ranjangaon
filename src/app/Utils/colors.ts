@@ -6,7 +6,8 @@ export const colors = {
     status: {
         green: '#28A745',
         yellow: '#FFBE31',
-        red: '#FF0000'
+        red: '#FF0000',
+        cool: '#3C9DD0'
     },
     racks: '#DEDEDE',
     dialogIcon: '#8E8E8E',

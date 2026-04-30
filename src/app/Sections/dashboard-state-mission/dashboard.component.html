@@ -80,55 +80,6 @@
     </div>
 </div>
 
-<!-- ========================================================================================================== -->
-<!-- Localisation and It's related Dialog box -->
-<!-- ========================================================================================================== -->
-
-<!-- Localisation Popup -->
-<fleet-popup *ngIf="isLocaliseDialogOpen" [isClose]="(localisationScore > configuration.localisation.min) && localisationStatus !== 207" [title]="'Localise Robot!'" (view)="isLocaliseDialogOpen = $event; localisationScore = 0">
-    <div class="flex flex-col items-start justify-start w-full h-max">
-
-        <div class="w-max h-[400px] overflow-hidden mt-8 flex items-center justify-center relative">
-            <ranjangaon-circular-indicator [angle]="270" [size]="500" [color]="localisationScoreColor(localisationScore)" [data]="localisationScore" [rotate]="135" >
-                <span class="flex flex-col items-center justify-center pb-12">
-                    <span [ngClass]="{'text-status-green': localisationScore >= 70, 'text-status-yellow': localisationScore >= 40 && localisationScore <= 69, 'text-status-red': localisationScore <= 39,}" class="flex items-end justify-start gap-2 transition-colors duration-300 text-darkAsh">
-                        <p class="text-[64px] font-semibold p-0 m-0 leading-tight pt-5">{{localisationScore}}</p>
-                        <p class="text-[30px] font-medium pb-3">%</p>
-                    </span>
-                    <p class="text-[18px] text-darkAsh -mt-2">Localization Score</p>
-                </span>
-            </ranjangaon-circular-indicator>
-        </div>
-
-        <!-- <div *ngIf="localisationScoreAtMannual === 0" class="w-full h-[400px] overflow-hidden mt-8 flex items-center justify-center relative animate-slideFromDown">
-            <p class="animate-pulse text-[30px] font-medium">Calculating...</p>
-        </div> -->
-
-        <div class="z-40 flex items-center justify-center w-full gap-5 -mt-10 h-max">
-            <button (click)="localisationStatus !== 207 ? closeLocalize() : localizeRobot()" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
-                {{localisationScore > configuration.localisation.min ? 'Continue' : 'Localize Again'}}
-            </button>
-        </div>
-    </div>
-</fleet-popup>
-
-<!-- Localisation Error -->
-<fleet-popup *ngIf="localisationStatus === 207 && !isLocaliseDialogOpen" [isClose]="false" [title]="'Robot Delocalized !'">
-    <div class="flex flex-col items-start justify-start w-full h-max">
-        <div class="flex items-center justify-center w-full h-[300px]">
-            <ranjangaon-icons [icon]="'localisationScore'" [size]="200" [color]="colors.dialogIcon"></ranjangaon-icons>
-        </div>
-
-        <p class="text-[20px] mt-4 leading-[45px]">Tap Localize to set the robot's position.</p>
-
-        <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
-            <button (click)="isLocaliseDialogOpen = true" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
-                Localize
-            </button>
-        </div>
-
-    </div>
-</fleet-popup>
 
 <!-- ========================================================================================================== -->
 <!-- User Action based Dialog box -->
@@ -278,8 +229,9 @@
     <div *ngIf="!pickLocationAck['skip']" class="flex flex-col items-start justify-start w-full translate-x-full h-max animate-slideIn">
 
         <div class="w-full h-[350px] mt-4 flex flex-col items-center justify-center relative">
-            <p class="text-[96px] font-semibold text-black w-[295px]">00:{{timer < 10 ? '0'+timer : timer}}</p>
-            <p class="text-[40px] text-primary font-medium">Sec</p>
+            <!-- <p class="text-[96px] font-semibold text-black w-[295px]">00:{{timer < 10 ? '0'+timer : timer}}</p> -->
+            <p class="text-[96px] font-semibold text-black w-[295px]">{{time['minutes'] < 10 ? '0'+time['minutes'] : time['minutes']}}:{{time['seconds'] < 10 ? '0'+time['seconds'] : time['seconds']}}</p>
+            <p class="text-[40px] text-primary font-medium">{{time['minutes'] === 0 ? 'Sec' : 'Min'}}</p>
         </div>
 
         <p class="text-[20px] mt-4 leading-[45px]">Tap Acknowledge to begin loading the materials at this location.</p>
@@ -294,7 +246,7 @@
                 Skip
             </button>
 
-            <button (click)="clearAcknowledgementTimer()" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+            <button *ngIf="robotMode === 2" (click)="clearAcknowledgementTimer()" class="w-full h-[78px]  bg-primary text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
                 Acknowledge
             </button>
         </div>
@@ -326,7 +278,7 @@
 
 
 <!-- ========================================================================================================== -->
-<!-- banners and UI Blocks to stop user interaction based dialog box -->
+<!-- Banners and UI Blocks to stop user interaction based dialog box -->
 <!-- ========================================================================================================== -->
 
 <!-- Returning Home UI-->
@@ -378,7 +330,7 @@
 </fleet-popup>
 
 <!-- Task-Transition popup-->
-<fleet-popup *ngIf="liveData?.currentNode?.status !== 13 && liveData?.currentNode?.current !== configuration?.nodes?.homeNode &&  liveData?.currentNode?.current !== configuration?.nodes?.chargingNode && liveData?.currentNode?.current !== 0 && false" [isClose]="false" [title]="'Robot Moving!!'">
+<fleet-popup *ngIf="liveData?.currentNode?.status !== 13 && liveData?.currentNode?.current !== configuration?.nodes?.homeNode &&  liveData?.currentNode?.current !== configuration?.nodes?.chargingNode && liveData?.currentNode?.current !== 0 && localisationStatus !== 207 && this.configuration && liveData?.current" [isClose]="false" [title]="'Robot Moving!!'">
     <div class="flex items-center justify-start w-full gap-6 mt-6 h-max">
         <div class="min-w-[110px] h-[110px] bg-primary flex items-center justify-center rounded-[12px]">
             <ranjangaon-icons [icon]="'robot'" [size]="64" [color]="'#FFF'"></ranjangaon-icons>
@@ -411,5 +363,57 @@
             <p class="text-[22px] font-semibold text-primary">Note</p>
             <p class="text-[20px] mt-1 leading-[45px]">After rotation is getting completed, Next action will be executed.</p>
         </span>
+    </div>
+</fleet-popup>
+
+
+<!-- ========================================================================================================== -->
+<!-- Localisation and It's related Dialog box -->
+<!-- It is declared at last, so that, it will be rendered in top layer, if there is any other dialog open -->
+<!-- ========================================================================================================== -->
+
+<!-- Localisation Popup -->
+<fleet-popup *ngIf="isLocaliseDialogOpen" [isClose]="(localisationScore > configuration.localisation.min) && localisationStatus !== 207" [title]="'Localise Robot!'" (view)="isLocaliseDialogOpen = $event; localisationScore = 0">
+    <div class="flex flex-col items-start justify-start w-full h-max">
+
+        <div class="w-max h-[400px] overflow-hidden mt-8 flex items-center justify-center relative">
+            <ranjangaon-circular-indicator [angle]="270" [size]="500" [color]="localisationScoreColor(localisationScore)" [data]="localisationScore" [rotate]="135" >
+                <span class="flex flex-col items-center justify-center pb-12">
+                    <span [ngClass]="{'text-status-green': localisationScore >= 70, 'text-status-yellow': localisationScore >= 40 && localisationScore <= 69, 'text-status-red': localisationScore <= 39,}" class="flex items-end justify-start gap-2 transition-colors duration-300 text-darkAsh">
+                        <p class="text-[64px] font-semibold p-0 m-0 leading-tight pt-5">{{localisationScore}}</p>
+                        <p class="text-[30px] font-medium pb-3">%</p>
+                    </span>
+                    <p class="text-[18px] text-darkAsh -mt-2">Localization Score</p>
+                </span>
+            </ranjangaon-circular-indicator>
+        </div>
+
+        <!-- <div *ngIf="localisationScoreAtMannual === 0" class="w-full h-[400px] overflow-hidden mt-8 flex items-center justify-center relative animate-slideFromDown">
+            <p class="animate-pulse text-[30px] font-medium">Calculating...</p>
+        </div> -->
+
+        <div class="z-40 flex items-center justify-center w-full gap-5 -mt-10 h-max">
+            <button (click)="localisationStatus !== 207 ? closeLocalize() : localizeRobot()" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+                {{localisationScore > configuration.localisation.min ? 'Continue' : 'Localize Again'}}
+            </button>
+        </div>
+    </div>
+</fleet-popup>
+
+<!-- Localisation Error -->
+<fleet-popup *ngIf="localisationStatus === 207 && !isLocaliseDialogOpen" [isClose]="false" [title]="'Robot Delocalized !'">
+    <div class="flex flex-col items-start justify-start w-full h-max">
+        <div class="flex items-center justify-center w-full h-[300px]">
+            <ranjangaon-icons [icon]="'localisationScore'" [size]="200" [color]="colors.dialogIcon"></ranjangaon-icons>
+        </div>
+
+        <p class="text-[20px] mt-4 leading-[45px]">Tap Localize to set the robot's position.</p>
+
+        <div class="flex items-center justify-center w-full gap-5 mt-16 h-max">
+            <button (click)="isLocaliseDialogOpen = true" class="w-full h-[78px] bg-lavender text-white flex items-center justify-center rounded-[4px] font-medium text-[22px]">
+                Localize
+            </button>
+        </div>
+
     </div>
 </fleet-popup>

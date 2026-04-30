@@ -326,12 +326,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 break;
 
             case RobotState.TASK_READY:
-                if(await this.taskAPI.createTask(this.taskList)) {
+                if(await this.taskAPI.createTask(this.taskList, false)) {
                     this.setState(RobotState.TASK_SENT);
                     this.charging['taskSent'] = false;
                     break;
                 }
                 this.print.log('Task List not sent to robot!')
+                this.print.log('Returning to homel because no task has been sent!!')
                 this.setState(RobotState.IDLE);
                 break;
 
@@ -370,8 +371,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
                 if(!condition) {
                     this.setState(RobotState.WAITING_PICK_ACK);
-                    this.startAcknowledgementTimer();
                     this.setType('PICK');
+                    this.startAcknowledgementTimer();
                 }
                 else if(condition && !this.isPickTaskSent) {
                     // This will be only triggered, when the robot gets home location task
@@ -396,7 +397,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
                 console.log({drop: dropAck, pick: pickAck});
 
-                if(data?.currentNode?.current === this.configuration?.nodes?.homeNode) {
+                if(data?.currentNode?.current === this.configuration?.nodes?.homeNode && this.currentRobotMode() === 2) {
                     this.setState(RobotState.IDLE);
                 }
 
@@ -468,10 +469,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
                     if(this.pickLocations.length === 0){
                         // this.pickAPI.completeTask(this.liveData?.currentNode?.current);
-
                         this.createdTaskList = this.fetchTaskListFromSS();
                         // This is checked when there is no empty task list
-                        if(this.isTaskListEmpty(this.createdTaskList) ) {
+                        if(this.isTaskListEmpty(this.createdTaskList) && this.currentRobotMode() === 2) {
                             this.isPickTaskSent = false;
                             this.isDropTaskSent = false;
                             await this.taskAPI.createTask([nodes?.homeNode]); // Consider it as a normal homeNode Task and not as pick task
@@ -539,6 +539,64 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // ===================================================================================================
+    // Robot Mode Functions
+    // ===================================================================================================
+
+    private async generateAutoModeDropSequence(){
+        const dropLocations = await this.fetchLocations();
+        this.configuration?.sequence?.drop.forEach((location:number) => {
+            if(dropLocations.includes(location)) {
+                this.addTask(+location);
+            }
+            else {
+                this.print.error('Location that is configured is not available in the drop location list from the robot, check')
+            }
+        });
+
+        return this.fetchTaskListFromSS();
+    }
+
+    private fetchLocations():Promise<number[]> {
+        return new Promise((resolve, reject) => {
+            const locationToBeIgnored = this.ignoreLocations();
+            this.api.get('navitrol/location-list', {}).subscribe({
+                next: (response:any) => {
+                    this.print.log(response);
+                    const locations = response.data.filter((data:any) => !locationToBeIgnored.includes(data));
+                    resolve(locations)
+                },
+                error: (error:any) => {
+                    this.print.error('Error Happened while fetching locations in ract-select => ',error);
+                    resolve([]);
+                }
+            })
+        })
+    }
+
+    private ignoreLocations():number[] {
+        const ignoredLocations = [];
+        const lenOfPickNodeList = this.configuration?.nodes?.pickNode.length;
+
+        // Pick Nodes added to the ignorance list
+        for(let i=0; i<lenOfPickNodeList; i++) {
+            ignoredLocations.push(this.configuration?.nodes?.pickNode[i])
+        }
+
+        // Add charging node to the ignorance list
+        ignoredLocations.push(this.configuration?.nodes?.chargingNode, this.configuration?.nodes?.homeNode);
+        return ignoredLocations;
+
+    }
+
+    private addTask(id:number) {
+        // Step 1: Check whether there is Location entered
+        this.createdTaskList[+id] = [+id];
+        this.print.log({locations: Object.keys(this.taskList), racks: Object.values(this.taskList)});
+        this.ss.setItem('_taskList', this.createdTaskList);
+    }
+
+
+    // ===================================================================================================
     // Functional APIs
     // 1. In-place rotation API
     // 2. SendTaskToTheRobot
@@ -591,7 +649,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         })
     }
 
-    async sendTaskToTheRobot() {
+    private async sendTaskToTheRobot() {
         this.createdTaskList = this.fetchTaskListFromSS();
         this.taskList = this.getAllTheLocationsFromRawData(this.createdTaskList);
         if(this.taskList.length !== 0) {
@@ -610,7 +668,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     /**
      * If the list size is 1, it make the state to IDLE and if the size is more, list is sent to robot and change the Status to TASK_SENT
      */
-    async sendPickTasksToRobot(nodes:number[]){
+    private async sendPickTasksToRobot(nodes:number[]){
         if(!this.isPickTaskSent) {
             if(await this.pickAPI.createTask(nodes)) {
                 this.setType('PICK')
@@ -645,7 +703,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // Helper
-    isTaskPresent() {
+    private isTaskPresent() {
         this.createdTaskList = this.fetchTaskListFromSS();
         const list = this.getAllTheLocationsFromRawData(this.createdTaskList);
         return list.length === 0
@@ -686,6 +744,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         clearInterval(this.pickLocationAck['timerRef']);
 
         this.timer = this.configuration.waitingTime;
+        this.calculateTime(this.timer);
         this.dropLocationAck['skip'] = false;
         this.pickLocationAck['skip'] = false;
 
@@ -743,6 +802,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         else {
             this.print.log('Some other value is being passed at the time of Waiting ACK');
         }
+        this.clearTimeVariable();
     }
 
     skipAckowledgement() {
@@ -757,6 +817,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         else {
             this.print.log('Some other value is being passed at the time of Waiting ACK');
         }
+        this.clearTimeVariable();
     }
 
     skipTask() {
@@ -767,6 +828,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.ss.setItem('_taskList', this.createdTaskList);
         this.renderRacks();
         this.setState(RobotState.MOVE_NEXT_DROP);
+    }
+
+    clearTimeVariable() {
+        this.time['minutes'] = 0;
+        this.time['seconds'] = 0;
     }
 
     // ===================================================================================================
@@ -910,6 +976,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         else return colors.status.red;
     }
 
+    batteryTemperatureColor(value:number) {
+        if(value >= 40) return colors.status.red;
+        else if(value >= 33) return colors.status.yellow;
+        else return colors.status.green;
+    }
+
     // ===================================================================================================
     // Helper Functions
     // ===================================================================================================
@@ -1012,7 +1084,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
      * @returns raw task list
      */
     private fetchTaskListFromSS():any {
-        const tasks = this.ss.getItem('_taskList')
+        let tasks:any;
+
+        if(this.currentRobotMode() === 2) {
+            tasks = this.ss.getItem('_taskList');
+        }
+        else if(this.currentRobotMode() === 1) {
+            tasks = this.generateAutoModeDropSequence();
+        }
 
         if(tasks === undefined || tasks === null) {
             return {}
