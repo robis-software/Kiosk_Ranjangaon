@@ -16,4 +16,4 @@ interfaceRouter.post('/rotate-180', navitrolClientController.inPlaceRotation);
 interfaceRouter.post('/set-pick-location', navitrolClientController.setPickLocation);
 
 
-export default interfaceRouter
+export default interfaceRouter;

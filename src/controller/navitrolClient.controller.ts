@@ -242,13 +242,14 @@ class NavitrolClientController {
                 this.fetchData(process.env.CHARGING_STATUS)
             ]);
 
-            const live = !!(localisation && (+battery >= 0) && (speed !== null) && currentNode) ;
+            const live = !!(localisation && (+battery?.percentage >= 0) && (speed !== null) && currentNode) ;
 
             const response = {
                 date:new Date().toLocaleTimeString().split(' ')[0],
                 live,
                 localisation, 
-                battery: battery, 
+                battery: battery.percentage+70,
+                temperature: battery.temperature,
                 speed: speed < 0  ? (-speed) : speed, 
                 currentNode,
                 chargingStaus
