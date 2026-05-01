@@ -330,7 +330,7 @@
 </fleet-popup>
 
 <!-- Task-Transition popup-->
-<fleet-popup *ngIf="liveData?.currentNode?.status !== 13 && liveData?.currentNode?.current !== configuration?.nodes?.homeNode &&  liveData?.currentNode?.current !== configuration?.nodes?.chargingNode && liveData?.currentNode?.current !== 0 && localisationStatus !== 207 && this.configuration && liveData?.current" [isClose]="false" [title]="'Robot Moving!!'">
+<fleet-popup *ngIf="liveData?.currentNode?.status !== 13 && liveData?.currentNode?.current !== configuration?.nodes?.homeNode &&  liveData?.currentNode?.current !== configuration?.nodes?.chargingNode && liveData?.currentNode?.current !== 0 && localisationStatus !== 207" [isClose]="false" [title]="'Robot Moving!!'">
     <div class="flex items-center justify-start w-full gap-6 mt-6 h-max">
         <div class="min-w-[110px] h-[110px] bg-primary flex items-center justify-center rounded-[12px]">
             <ranjangaon-icons [icon]="'robot'" [size]="64" [color]="'#FFF'"></ranjangaon-icons>

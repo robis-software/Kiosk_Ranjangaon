@@ -8,6 +8,7 @@ import { RouterLink } from "@angular/router";
 import { SessionStorageService } from '../../../Services/session-storage.service';
 import Print from '../../../Utils/print';
 import { ApiService } from '../../../Services/api.service';
+import { NotificationService } from '../../../Services/notification.service';
 
 @Component({
   selector: 'ranjangaon-general',
@@ -33,7 +34,7 @@ export class GeneralComponent implements OnInit {
 
     robotSetSpeed:number = 0;
 
-    constructor(private readonly ss:SessionStorageService, private readonly api:ApiService) {
+    constructor(private readonly ss:SessionStorageService, private readonly api:ApiService, private readonly notification:NotificationService) {
         this.colors = colors;
         this.print = new Print();
     }
@@ -75,11 +76,28 @@ export class GeneralComponent implements OnInit {
         let body:any
         if(callFor === 'ackTimer') {
             body = {waitingTime: this.getWaitingTime()}
+            this.updateConfig(body)
         }
         else if(callFor === 'speed') {
-            body = {robotSetSpeed: this.robotSetSpeed}
+            this.updateSpeed(this.robotSetSpeed, this.robotSetSpeed);
         }
-        this.updateConfig(body)
+    }
+
+    private updateSpeed(speed:number, body:any){
+        this.api.post('navitrol/set-speed', {speed}).subscribe({
+            next: (response:any) => {
+                if(response.data) {
+                    this.updateConfig({robotSetSpeed: this.robotSetSpeed});
+                }
+                else {
+                    this.notification.error('Error happened!', "Error happened during updating the data")
+                }
+
+            },
+            error: (error:any) => {
+                this.print.error(error);
+            }
+        })
     }
 
     private initializeConfig() {
@@ -111,6 +129,7 @@ export class GeneralComponent implements OnInit {
                 if(response.data) {
                     this.configuration = response.data;
                     this.calculateTime(this.configuration?.waitingTime);
+                    this.robotSetSpeed = this.configuration?.robotSetSpeed;
                     this.ss.setItem('_config', response.data);
                     this.print.log('Configuration fetched and Updated in the storage!');
                     this.isTimeEditor = false;
