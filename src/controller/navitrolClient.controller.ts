@@ -248,7 +248,7 @@ class NavitrolClientController {
                 date:new Date().toLocaleTimeString().split(' ')[0],
                 live,
                 localisation, 
-                battery: battery.percentage+70,
+                battery: battery.percentage,
                 temperature: battery.temperature,
                 speed: speed < 0  ? (-speed) : speed, 
                 currentNode,

@@ -14,6 +14,7 @@ interfaceRouter.post('/create-task', navitrolClientController.sendTaskToRobot);
 interfaceRouter.post('/initialize', navitrolClientController.initializeRobot);
 interfaceRouter.post('/rotate-180', navitrolClientController.inPlaceRotation);
 interfaceRouter.post('/set-pick-location', navitrolClientController.setPickLocation);
+interfaceRouter.post('/set-speed', navitrolClientController.setRobotSpeed);
 
 
 export default interfaceRouter;
