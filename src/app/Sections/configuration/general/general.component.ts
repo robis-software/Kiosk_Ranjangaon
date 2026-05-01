@@ -79,20 +79,19 @@ export class GeneralComponent implements OnInit {
             this.updateConfig(body)
         }
         else if(callFor === 'speed') {
-            this.updateSpeed(this.robotSetSpeed, this.robotSetSpeed);
+            this.updateSpeed(this.robotSetSpeed);
         }
     }
 
-    private updateSpeed(speed:number, body:any){
+    private updateSpeed(speed:number){
         this.api.post('navitrol/set-speed', {speed}).subscribe({
             next: (response:any) => {
-                if(response.data) {
+                if(response.data || response?.data?.data) {
                     this.updateConfig({robotSetSpeed: this.robotSetSpeed});
                 }
                 else {
                     this.notification.error('Error happened!', "Error happened during updating the data")
                 }
-
             },
             error: (error:any) => {
                 this.print.error(error);

@@ -1193,7 +1193,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     private currentRobotMode():number {
         const config = this.ss.getItem('_config');
-        return config?.robotMode || 1;
+        // return config?.robotMode || 2;
+        return 2; //Will always return true, because development is still there in auto and manual mode
     }
 
 }
