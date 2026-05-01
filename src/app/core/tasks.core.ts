@@ -12,7 +12,7 @@ class TasksCore {
 
     createTask(list:number[], sort:boolean = true):Promise<boolean> {
         return new Promise((resolve, reject) => {
-            this.api.post('navitrol/create-task', {ids: list, from: this.taskFor, sort:true}).subscribe({
+            this.api.post('navitrol/create-task', {ids: list, from: this.taskFor, sort}).subscribe({
                 next: (res:any) => {
                     this.print.log(`${this.taskFor} task sent`, res);
                     this.logs.send(200, `${this.taskFor} task sent`, list);
