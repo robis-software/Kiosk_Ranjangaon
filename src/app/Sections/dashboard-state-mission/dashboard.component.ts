@@ -113,11 +113,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     pickLocations:any = [];
 
     // Charging Location Parameters - Focus On this parameters and play
-      charging:Record<string, any> = {
+    charging:Record<string, any> = {
         reached: false,
         taskSent:false,
         disconnectedAckGiven: false,
     }
+
+    isChargingMonitor:boolean = false;
 
     // Task List sent boolean
     isPickTaskSent:boolean = false;
@@ -200,9 +202,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     renderRacks() {
         this.createdTaskList = this.fetchTaskListFromSS();
         this.print.log('Tasks Lists =>', this.createdTaskList)
-        const taskLocations:any = Object.keys(this.createdTaskList);
-        const taskRacks:any = Object.values(this.createdTaskList);
+        const taskLocations:any = Object.keys(this.createdTaskList) || [];
+        const taskRacks:any = Object.values(this.createdTaskList) || [];
         this.generateRacks(this.configuration.racks.rows * this.configuration.racks.columns);
+
         taskLocations.forEach((location:number, index:number)=> {
             taskRacks[index].forEach((racks:number) => {
                 const currentRack = this.racksArray[racks-1];
@@ -238,20 +241,26 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             this.ss.setItem('_pickLocation', this.pickLocations);
             this.pickLocations = this.generatePickLocations();
             this.setRefencePoint();
-            this.sendPickTasksToRobot(this.pickLocations);
+            this.sendPickTasksToRobot(this.pickLocations, 'Monitor Status');
         }
 
         this.subscription = this.liveStream.serverEvent$.subscribe(async(data:any) => {
             if(data?.live) {
                 this.liveData = data;
                 this.print.log(data?.currentNode);
+                const condition = [RobotState.CHARGER_CONNECTED, RobotState.CHARGING, RobotState.CHARGING_COMPLETE_ACK];
+                if(data?.chargingStatus && !condition.includes(this.currentState)) {
+                    this.setState(RobotState.CHARGING);
+                }
             }
             else {
                 this.liveData = {...this.liveData, live: false}
                 this.print.log('Server Offline and no data is coming form navitrol')
             }
             await this.stateMachine(data);
+            this.print.log({pickTask: this.isPickTaskSent, dropSent: this.isDropTaskSent});
             this.localisationStatus = data?.localisation?.error?.code;
+            this.createdTaskList = this.ss.getItem("_taskList");
         });
     }
 
@@ -270,7 +279,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     private async stateMachine(data:any) {
-        const nodes:any = this.configuration?.nodes
+        const nodes:any = this.configuration?.nodes;
+        const taskList = this.fetchTaskListFromSS();
+        if(this.isTaskListEmpty(taskList) && this.currentRobotMode() === 1 && !this.isDropTaskSent) {
+            console.log('Assgin new Drop Sequence to ss')
+            await this.preloadAutoModeDropSequence();
+        }
 
         // Check the robot mode
         this.robotMode = this.currentRobotMode();
@@ -311,7 +325,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
                 else if(!this.isPickTaskSent) {
                     const nodes = this.generatePickLocations();
-                    this.sendPickTasksToRobot(nodes);
+                    this.print.log('Pick Task is generated from IDLE state and it is sent!!')
+                    this.sendPickTasksToRobot(nodes, 'StateMachine-IDLE');
                 }
                 // Pick task initialization — guarded by session storage
                 // If pickLocations exists in SS, tasks were already sent (even across reloads)
@@ -367,7 +382,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 break;
 
             case RobotState.ARRIVED_PICK:
-                const condition = data?.currentNode?.current === nodes?.homeNode && this.currentRobotMode() === 2;
+                const condition = data?.currentNode?.current === nodes?.homeNode;
 
                 if(!condition) {
                     this.setState(RobotState.WAITING_PICK_ACK);
@@ -439,12 +454,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.taskAPI.completeTask(data?.currentNode?.current);
                     if(this.checkForSkippedTask()) {
                         // Checks is there any task skipped
+                        console.log('Check for skipped Task condition is true')
                         // Idf there is task, the taskList is swapped with skipped task list and it is stored
                         this.setRefencePoint(data?.currentNode?.current);
                         this.isTaskSkipped = true;
                         this.setType('DROP');
                         this.setState(RobotState.TASK_READY);
-                        this.renderRacks();
+                        if(this.currentRobotMode() === 2) {
+                            this.renderRacks();
+                        }
                         break;
                     }
                     await this.taskAPI.createTask([nodes?.homeNode]); // Consider it as a normal homeNode Task and not as pick task
@@ -542,6 +560,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     // Robot Mode Functions
     // ===================================================================================================
 
+    private autoModeDropSequence:any = null; // cache
+
+    // Call this once when mode switches to 1, or at init
+    private async preloadAutoModeDropSequence():Promise<void> {
+        this.autoModeDropSequence = await this.generateAutoModeDropSequence();
+        this.print.log("Preload Auto Seqeunce",this.autoModeDropSequence);
+    }
+
     private async generateAutoModeDropSequence(){
         const dropLocations = await this.fetchLocations();
         this.configuration?.sequence?.drop.forEach((location:number) => {
@@ -553,7 +579,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             }
         });
 
-        return this.fetchTaskListFromSS();
+        return this.ss.getItem('_taskList') ?? {}
     }
 
     private fetchLocations():Promise<number[]> {
@@ -590,9 +616,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     private addTask(id:number) {
         // Step 1: Check whether there is Location entered
-        this.createdTaskList[+id] = [+id];
-        this.print.log({locations: Object.keys(this.taskList), racks: Object.values(this.taskList)});
-        this.ss.setItem('_taskList', this.createdTaskList);
+        let temp = this.fetchTaskListFromSS();
+        temp[+id] = [0];
+        this.print.log({locations: Object.keys(temp), racks: Object.values(temp)});
+        this.ss.setItem('_taskList', temp);
     }
 
 
@@ -668,7 +695,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     /**
      * If the list size is 1, it make the state to IDLE and if the size is more, list is sent to robot and change the Status to TASK_SENT
      */
-    private async sendPickTasksToRobot(nodes:number[]){
+    private async sendPickTasksToRobot(nodes:number[], from:string){
+        console.log('SendPickTaskFrom', from);
         if(!this.isPickTaskSent) {
             if(await this.pickAPI.createTask(nodes)) {
                 this.setType('PICK')
@@ -677,6 +705,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.setState(RobotState.TASK_SENT);
                 this.isPickTaskSent = true;
                 this.isDropTaskSent = false;
+
+                // if(this.currentRobotMode() === 1 && this.liveData?.currentNode.status === 13) {
+                //     this.pickAPI.completeTask(this.liveData?.currentNode.current)
+                // }
             }
             else {
                 this.setState(RobotState.IDLE);
@@ -702,12 +734,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         console.log('Current Robot State =>',this.stateOfRobot[this.currentState])
     }
 
-    // Helper
-    private isTaskPresent() {
-        this.createdTaskList = this.fetchTaskListFromSS();
-        const list = this.getAllTheLocationsFromRawData(this.createdTaskList);
-        return list.length === 0
-    }
 
     /**
      * Used to generate the scattered pickLocations into a single list
@@ -822,11 +848,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     skipTask() {
         if(!this.isTaskSkipped && this.currentRobotMode() === 2) {
-            this.skippedTaskList[this.liveData?.currentNode?.current] = this.createdTaskList[this.liveData?.currentNode?.current]
+            this.skippedTaskList[this.liveData?.currentNode?.current] = this.createdTaskList[this.liveData?.currentNode?.current];
+            console.log(this.skippedTaskList);
         }
-        this.createdTaskList[this.liveData?.currentNode?.current] = undefined;
+        this.createdTaskList[this.liveData?.currentNode?.current] = [];
         this.ss.setItem('_taskList', this.createdTaskList);
-        this.renderRacks();
+        if(this.currentRobotMode() === 2) {
+            this.renderRacks();
+        }
         this.setState(RobotState.MOVE_NEXT_DROP);
     }
 
@@ -1052,9 +1081,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
      * @returns boolean
      */
     private isAllUnloaded(locationId:number):boolean {
-        this.createdTaskList[this.selectedRack.dropLocation] = this.createdTaskList[this.selectedRack.dropLocation].filter((rack:number)=> rack !== this.selectedRack.id);
-        this.ss.setItem('_taskList', this.createdTaskList);
-        this.renderRacks();
+        if(this.currentRobotMode() === 2) {
+            this.createdTaskList[this.selectedRack.dropLocation] = this.createdTaskList[this.selectedRack.dropLocation].filter((rack:number)=> rack !== this.selectedRack.id);
+            this.ss.setItem('_taskList', this.createdTaskList);
+            this.renderRacks();
+        }
+        else if(this.currentRobotMode() === 1) {
+            this.createdTaskList[this.selectedRack.dropLocation] = [];
+            this.ss.setItem('_taskList', this.createdTaskList);
+        }
         if(this.createdTaskList[this.selectedRack.dropLocation].length === 0) {
             return true
         }
@@ -1090,7 +1125,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             tasks = this.ss.getItem('_taskList');
         }
         else if(this.currentRobotMode() === 1) {
-            tasks = this.generateAutoModeDropSequence();
+            tasks = this.autoModeDropSequence;
+            this.print.log("Auto Sequence",tasks)
         }
 
         if(tasks === undefined || tasks === null) {
@@ -1109,13 +1145,27 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private getAllTheLocationsFromRawData(list:any):number[] {
         this.createdTaskList = this.fetchTaskListFromSS();
         const keys = Object.keys(this.createdTaskList);
-        let tempTaskList = [];
+        let tempTaskList:number[] = [];
 
-        for(let key in keys) {
-            if(this.createdTaskList[keys[key]].length !== 0) {
-                tempTaskList.push(+keys[key]);
-            }
+        if(this.currentRobotMode() === 2) {
+            // for(let key in keys) {
+            //     if(this.createdTaskList[keys[key]].length !== 0) {
+            //         tempTaskList.push(+keys[key]);
+            //     }
+            // }
+
+            keys.forEach((taskId:any) => {
+                if(this.createdTaskList[taskId].length !== 0) {
+                    tempTaskList.push(+taskId)
+                }
+            })
         }
+        else if(this.currentRobotMode() === 1) {
+            keys.forEach((taskId:any) => {
+                tempTaskList.push(+taskId);
+            })
+        }
+
         return tempTaskList
     }
 

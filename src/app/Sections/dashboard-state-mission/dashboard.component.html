@@ -138,12 +138,12 @@
 </fleet-popup>
 
 <!-- Robot Charging UI -->
-<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode && liveData?.currentNode?.status === 13 && (currentState === robotState.CHARGER_CONNECTED || currentState === robotState.CHARGING)" [title]="'Charging Mode !'" [isClose]="false">
+<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode && liveData?.currentNode?.status === 13 && (currentState === robotState.CHARGER_CONNECTED || currentState === robotState.CHARGING) || isChargingMonitor" [title]="'Charging Mode !'" [isClose]="false">
     <div class="w-full h-full">
         <div class="w-max h-[400px] overflow-hidden mt-8 flex items-center justify-center relative">
             <ranjangaon-circular-indicator [angle]="360" [size]="500" [color]="batteryIndicatorColor(liveData?.battery)" [data]="+liveData?.battery || 30" [rotate]="-90" >
                 <span class="flex flex-col items-center justify-center">
-                    @if(currentState === robotState.CHARGING){
+                    @if(currentState === robotState.CHARGING || isChargingMonitor){
                         <span class="animate-slideFromDown">
                             <ranjangaon-icons class="animate-pulse" [icon]="'charging'" [size]="120" [color]="colors.status.yellow"></ranjangaon-icons>
                         </span>}
@@ -152,7 +152,7 @@
             </ranjangaon-circular-indicator>
         </div>
 
-        <div *ngIf="currentState === robotState.CHARGING && liveData?.battery >= configuration?.battery.max" class="mt-4 animate-slideIn">
+        <div *ngIf="currentState === robotState.CHARGING && liveData?.battery >= configuration?.battery.max || (liveData?.battery >= configuration?.battery.max && isChargingMonitor)" class="mt-4 animate-slideIn">
             <p class="text-[20px] leading-[45px]">Charging is complete. Unplug the charger, then tap Acknowledge.</p>
 
             <span class="w-full mt-6">
@@ -330,7 +330,7 @@
 </fleet-popup>
 
 <!-- Task-Transition popup-->
-<fleet-popup *ngIf="liveData?.currentNode?.status !== 13 && liveData?.currentNode?.current !== configuration?.nodes?.homeNode &&  liveData?.currentNode?.current !== configuration?.nodes?.chargingNode && liveData?.currentNode?.current !== 0 && localisationStatus !== 207" [isClose]="false" [title]="'Robot Moving!!'">
+<fleet-popup *ngIf="liveData?.live && liveData?.currentNode?.status !== 13 && liveData?.currentNode?.current !== configuration?.nodes?.homeNode &&  liveData?.currentNode?.current !== configuration?.nodes?.chargingNode && liveData?.currentNode?.current !== 0 && localisationStatus !== 207" [isClose]="false" [title]="'Robot Moving!!'">
     <div class="flex items-center justify-start w-full gap-6 mt-6 h-max">
         <div class="min-w-[110px] h-[110px] bg-primary flex items-center justify-center rounded-[12px]">
             <ranjangaon-icons [icon]="'robot'" [size]="64" [color]="'#FFF'"></ranjangaon-icons>

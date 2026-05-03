@@ -6,11 +6,10 @@
     <p class="text-[20px] font-medium text-darkAsh w-[200px] overflow-ellipsis whitespace-nowrap overflow-hidden">{{config?.name ? config.name : 'Robot Name'}}</p>
   </div>
 
-
-  <!-- <div *ngIf="liveData?.live && liveData?.currentNode?.current === config?.nodes?.homeNode && liveData?.currentNode?.status === 13" class="relative w-full h-[52px] border-2 border-lightGray rounded-[6px] flex items-center justify-between p-1">
+  <div *ngIf="liveData?.live && liveData?.currentNode?.current === config?.nodes?.homeNode && liveData?.currentNode?.status === 13" class="relative w-full h-[52px] border-2 border-lightGray rounded-[6px] flex items-center justify-between p-1">
         <button (click)="changeModeDialogOpen(1)" [ngClass]="{'bg-status-green text-white': robotActionMode === 1, 'bg-white text-darkAsh': robotActionMode !== 1}" class="text-[20px] font-medium w-full overflow-ellipsis whitespace-nowrap overflow-hidden text-center h-full rounded-[4px] flex items-center justify-center duration-300">Auto</button>
         <button (click)="changeModeDialogOpen(2)" [ngClass]="{'bg-lavender text-white': robotActionMode === 2, 'bg-white text-darkAsh': robotActionMode !== 2}" class="text-[20px] font-medium w-full overflow-ellipsis whitespace-nowrap overflow-hidden text-center h-full rounded-[4px] flex items-center justify-center duration-300">Manual</button>
-  </div> -->
+  </div>
 
   <div class="flex items-center justify-center gap-4 w-max h-[50px]">
     <button (click)="openOptions()" class="flex items-center justify-center size-[50px] rounded-[6px] bg-lavender">
