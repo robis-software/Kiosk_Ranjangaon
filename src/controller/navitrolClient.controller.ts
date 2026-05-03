@@ -234,7 +234,7 @@ class NavitrolClientController {
 
     private async liveResponse():Promise<string> {
         try {
-            const [localisation, battery, speed, currentNode, chargingStaus] = await Promise.all([
+            const [localisation, battery, speed, currentNode, chargingStatus] = await Promise.all([
                 this.fetchData(process.env.LOCALIZATION),
                 this.fetchData(process.env.BATTERY),
                 this.fetchData(process.env.SPEED),
@@ -252,7 +252,7 @@ class NavitrolClientController {
                 temperature: battery.temperature,
                 speed: speed < 0  ? (-speed) : speed, 
                 currentNode,
-                chargingStaus
+                chargingStatus
             };
         
             return JSON.stringify(response);
