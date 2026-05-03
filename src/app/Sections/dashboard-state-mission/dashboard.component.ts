@@ -325,7 +325,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
                 else if(!this.isPickTaskSent) {
                     const nodes = this.generatePickLocations();
-                    this.print.log('Pick Task is generated from IDLE state and it is sent!!')
+                    this.print.log('Pick Task is generated from IDLE state and it is sent!!');
+                    this.ss.setItem('_unOrderedList', []);
                     this.sendPickTasksToRobot(nodes, 'StateMachine-IDLE');
                 }
                 // Pick task initialization — guarded by session storage
@@ -852,6 +853,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             console.log(this.skippedTaskList);
         }
         this.createdTaskList[this.liveData?.currentNode?.current] = [];
+        // let unOrderedTaskList:number[] = this.ss.getItem('_unOrderedList');
+        // unOrderedTaskList = unOrderedTaskList.filter((taskId:any) => taskId !== this.liveData?.currentNode?.current);
+        // this.ss.setItem('_unOrderedList', unOrderedTaskList)
         this.ss.setItem('_taskList', this.createdTaskList);
         if(this.currentRobotMode() === 2) {
             this.renderRacks();
@@ -920,6 +924,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         // }
         this.print.log(this.selectedRack)
         this.createdTaskList[this.selectedRack.dropLocation] = this.createdTaskList[this.selectedRack.dropLocation].filter((rack:number)=> rack !== this.selectedRack.id);
+
+        // Write the delete code for _unOrderdedList;
+        let unOrderedList = this.ss.getItem('_unOrderedList');
+        unOrderedList = unOrderedList.filter((taskId:number) => taskId !== +this.selectedRack.dropLocation);
+        this.ss.setItem('_unOrderedList', unOrderedList);
+        this.print.log('UnOrderedList', unOrderedList);
 
         this.print.log('After Deleted Rack', this.createdTaskList);
         this.ss.setItem('_taskList', this.createdTaskList);
@@ -1154,16 +1164,32 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             //     }
             // }
 
-            keys.forEach((taskId:any) => {
+            const validTask:number[] = [];
+            keys.forEach((taskId:any) => {;
                 if(this.createdTaskList[taskId].length !== 0) {
-                    tempTaskList.push(+taskId)
+                    validTask.push(+taskId)
                 }
-            })
+            });
+
+            const userOrderedTaskList = this.ss.getItem("_unOrderedList");
+            userOrderedTaskList.forEach((orderedList:any) => {
+                if(validTask.includes(orderedList)) {
+                    tempTaskList.push(orderedList);
+                }
+            });
+
         }
         else if(this.currentRobotMode() === 1) {
-            keys.forEach((taskId:any) => {
-                tempTaskList.push(+taskId);
+            const sequence = this.configuration?.sequence?.drop;
+            sequence.forEach((sequenceId:number) => {
+                const id = String(sequenceId)
+                if(keys.includes(id)) {
+                    tempTaskList.push(+sequenceId);
+                }
             })
+            // keys.forEach((taskId:any) => {
+            //     tempTaskList.push(+taskId);
+            // })
         }
 
         return tempTaskList

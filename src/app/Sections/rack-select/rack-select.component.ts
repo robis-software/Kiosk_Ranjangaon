@@ -95,7 +95,7 @@ export class RackSelectComponent implements OnInit, OnDestroy {
 
     addTask(id:number) {
         // Step 1: Check whether there is Location entered
-        if(this.taskList[id] === null || this.taskList[id]?.length === 0 || this.taskList[id] === undefined) {
+        if(this.taskList[+id] === null || this.taskList[+id]?.length === 0 || this.taskList[+id] === undefined) {
             const racks = [];
             racks.push(+this.rackId);
             this.taskList[+id] = racks
@@ -104,10 +104,19 @@ export class RackSelectComponent implements OnInit, OnDestroy {
             this.taskList[+id].push(+this.rackId);
         }
 
-        this.print.log({locations: Object.keys(this.taskList), racks: Object.values(this.taskList)});
 
+        this.print.log({locations: Object.keys(this.taskList), racks: Object.values(this.taskList)});
+        this.addTaskToUnOrderedList(+id);
         this.ss.setItem('_taskList', this.taskList);
         this.goHome();
+    }
+
+    private addTaskToUnOrderedList(id:number) {
+        const unOrderedList:number[] = this.ss.getItem('_unOrderedList') ?? [];
+        if(!unOrderedList.includes(id)) {
+            unOrderedList.push(+id)
+            this.ss.setItem('_unOrderedList', unOrderedList);
+        }
     }
 
     goHome() {
