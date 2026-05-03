@@ -384,7 +384,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             case RobotState.ARRIVED_PICK:
                 const condition = data?.currentNode?.current === nodes?.homeNode;
 
-                if(!condition) {
+                if(!condition || (condition && this.currentRobotMode() === 1 && this.isPickTaskSent)) { // if the current is not homeNode
                     this.setState(RobotState.WAITING_PICK_ACK);
                     this.setType('PICK');
                     this.startAcknowledgementTimer();
