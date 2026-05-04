@@ -277,6 +277,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.ss.setItem('_currentState', this.currentState);
     }
 
+    isRotationTaskSent:boolean = false;
+
     private async stateMachine(data:any) {
         const nodes:any = this.configuration?.nodes;
         const taskList = this.fetchTaskListFromSS();
@@ -324,6 +326,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
                 else if(!this.isPickTaskSent) {
                     const nodes = this.generatePickLocations();
+                    this.ss.setItem('_pivotPoints', this.configuration?.pivotPoints);
                     this.print.log('Pick Task is generated from IDLE state and it is sent!!');
                     this.ss.setItem('_unOrderedList', []);
                     this.sendPickTasksToRobot(nodes, 'StateMachine-IDLE');
@@ -385,9 +388,16 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 const condition = data?.currentNode?.current === nodes?.homeNode;
 
                 if(!condition || (condition && this.currentRobotMode() === 1 && this.isPickTaskSent)) { // if the current is not homeNode
-                    this.setState(RobotState.WAITING_PICK_ACK);
-                    this.setType('PICK');
-                    this.startAcknowledgementTimer();
+                    const pivotPoints:number[] = this.ss.getItem('_pivotPoints') || [];
+                    if(pivotPoints.includes(data?.currentNode?.current) && !this.isRotationTaskSent && this.currentRobotMode() === 1) {
+                        this.isRotationTaskSent = true;
+                        this.rotateInplace('pivotPick');
+                    }
+                    else if(!this.isRotationTaskSent) {
+                        this.setState(RobotState.WAITING_PICK_ACK);
+                        this.setType('PICK');
+                        this.startAcknowledgementTimer();
+                    }
                 }
                 else if(condition && !this.isPickTaskSent) {
                     // This will be only triggered, when the robot gets home location task
@@ -430,9 +440,19 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 break
 
             case RobotState.ARRIVED_DROP:
-                console.log('Drop location ACK is Set False', this.dropLocationAck['given']);
-                this.setState(RobotState.WAITING_DROP_ACK);
-                this.startAcknowledgementTimer();
+
+                const pivotPoints:number[] = this.ss.getItem('_pivotPoints') || [];
+
+                if(pivotPoints.includes(data?.currentNode?.current) && !this.isRotationTaskSent && this.currentRobotMode() === 1) {
+                    this.isRotationTaskSent = true;
+                    this.rotateInplace('pivotDrop')
+                }
+                else if(!this.isRotationTaskSent) {
+                    console.log('Drop location ACK is Set False', this.dropLocationAck['given']);
+                    this.setState(RobotState.WAITING_DROP_ACK);
+                    this.setType('DROP');
+                    this.startAcknowledgementTimer();
+                }
                 break
 
             case RobotState.DROP_ACK:
@@ -634,12 +654,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     /**
      * This id used to rotate the robot in the point, it only makes the robot to rotate 180 Deg
      */
-    rotateInplace() {
+    rotateInplace(condition?:string) {
         this.api.post('navitrol/rotate-180', {}).subscribe({
             next: (res:any) => {
                 this.print.log("Rotate 180deg API Response", res);
                 this.isRobotRotating = true;
-                this.isRobotStillRotating();
+                this.isRobotStillRotating(condition);
             },
             error: (error:any) => {
                 this.print.error('Create Task API Error', error);
@@ -650,13 +670,34 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     /**
      * Function Used to monitor the rotation status for until the rotation is completed.\\\\\\\\\\\\
      */
-    private isRobotStillRotating() {
+    private isRobotStillRotating(condition?:string) {
         this.robotRotationTimer = setInterval(async()=>{
             this.isRobotRotating = await this.rotate_180_status();
             if(!this.isRobotRotating) {
                 clearInterval(this.robotRotationTimer);
+                if(condition === 'pivotPick') {
+                    this.removePointFromPivot(this.liveData?.currentNode?.current);
+                    this.setState(RobotState.WAITING_PICK_ACK);
+                    this.setType('PICK');
+                    this.startAcknowledgementTimer();
+                }
+                else if(condition === 'pivotDrop') {
+                    this.removePointFromPivot(this.liveData?.currentNode?.current);
+                    console.log('After Rotating Drop location ACK is Set False', this.dropLocationAck['given']);
+                    this.setState(RobotState.WAITING_DROP_ACK);
+                    this.setType('DROP')
+                    this.startAcknowledgementTimer();
+                }
+
+                this.isRotationTaskSent = false;
             }
         }, 1000)
+    }
+
+    private removePointFromPivot(point:number) {
+        let pivotPoints = this.ss.getItem('_pivotPoints') || [];
+        pivotPoints = pivotPoints.filter((pt:number) => pt !== point);
+        this.ss.setItem('_pivotPoints', pivotPoints);
     }
 
     /**
