@@ -63,7 +63,7 @@
             <!-- <button (click)="localizeRobot()" class="w-[150px] h-[65px] rounded-[6px] bg-lavender flex items-center justify-center text-white font-normal text-[20px]">Localise</button> -->
         </div>
 
-        <div class="flex items-center justify-end w-full gap-5 h-max">
+        <div *ngIf="getRobotMode() === 2" class="flex items-center justify-end w-full gap-5 h-max">
             <button (click)="rotateInplace()" *ngIf="liveData?.currentNode?.status === 13 || liveData?.currentNode?.current === configuration?.nodes?.homeNode" class="size-[130px] rounded-[6px] bg-[#263238] flex gap-1 flex-col items-center justify-center text-white font-normal text-[20px] animate-slideFromDown">
                 <ranjangaon-icons [icon]="'turn'" [size]="40" [color]="'#FFF'"></ranjangaon-icons>
                 <!-- Rotate  -->

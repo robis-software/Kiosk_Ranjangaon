@@ -228,28 +228,27 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.pickLocations = this.ss.getItem('_pickLocation') ?? [];
         console.log(this.pickLocations);
 
-        // // This logic initially send the pick tasks to the robot, but it need to be implemented in IDLE state - For better understanding and better code quality
+        // This logic initially send the pick tasks to the robot, but it need to be implemented in IDLE state - For better understanding and better code quality
         if(this.pickLocations && this.pickLocations.length !== 0) {
-            this.pickLocations = this.ss.getItem('_pickLocation');
             this.print.log('Pick Location Already Exists =>', this.pickLocations);
             this.isPickTaskSent = true;
             this.isDropTaskSent = false;
         }
-        else {
-            this.pickLocations = this.generatePickLocations();
-            this.print.log('Pick Location were generated =>', this.pickLocations);
-            this.ss.setItem('_pickLocation', this.pickLocations);
-            this.pickLocations = this.generatePickLocations();
-            this.setRefencePoint();
-            this.sendPickTasksToRobot(this.pickLocations, 'Monitor Status');
-        }
+        // else {
+        //     this.pickLocations = this.generatePickLocations();
+        //     this.print.log('Pick Location were generated =>', this.pickLocations);
+        //     this.ss.setItem('_pickLocation', this.pickLocations);
+        //     this.pickLocations = this.generatePickLocations();
+        //     this.setRefencePoint();
+        //     this.sendPickTasksToRobot(this.pickLocations, 'Monitor Status');
+        // }
 
         this.subscription = this.liveStream.serverEvent$.subscribe(async(data:any) => {
             if(data?.live) {
                 this.liveData = data;
                 this.print.log(data?.currentNode);
                 const condition = [RobotState.CHARGER_CONNECTED, RobotState.CHARGING, RobotState.CHARGING_COMPLETE_ACK];
-                if(data?.chargingStatus && !condition.includes(this.currentState)) {
+                if(data?.chargingStatus === 1 && !condition.includes(this.currentState)) {
                     this.setState(RobotState.CHARGING);
                 }
             }
@@ -618,6 +617,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private addTask(id:number) {
         // Step 1: Check whether there is Location entered
         let temp = this.fetchTaskListFromSS();
+        this.print.log('Current Task List -> Auto', temp);
         temp[+id] = [0];
         this.print.log({locations: Object.keys(temp), racks: Object.values(temp)});
         this.ss.setItem('_taskList', temp);
@@ -706,7 +706,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.setState(RobotState.TASK_SENT);
                 this.isPickTaskSent = true;
                 this.isDropTaskSent = false;
-
                 // if(this.currentRobotMode() === 1 && this.liveData?.currentNode.status === 13) {
                 //     this.pickAPI.completeTask(this.liveData?.currentNode.current)
                 // }
@@ -1131,13 +1130,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private fetchTaskListFromSS():any {
         let tasks:any;
 
-        if(this.currentRobotMode() === 2) {
-            tasks = this.ss.getItem('_taskList');
-        }
-        else if(this.currentRobotMode() === 1) {
-            tasks = this.autoModeDropSequence;
-            this.print.log("Auto Sequence",tasks)
-        }
+        // if(this.currentRobotMode() === 2) {
+        //     tasks = this.ss.getItem('_taskList');
+        // }
+        // else if(this.currentRobotMode() === 1) {
+        //     tasks = this.autoModeDropSequence;
+        //     this.print.log("Auto Sequence",tasks)
+        // }
+
+        tasks = this.ss.getItem('_taskList');
 
         if(tasks === undefined || tasks === null) {
             return {}
@@ -1171,27 +1172,35 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
             });
 
-            const userOrderedTaskList = this.ss.getItem("_unOrderedList");
-            userOrderedTaskList.forEach((orderedList:any) => {
-                if(validTask.includes(orderedList)) {
-                    tempTaskList.push(orderedList);
-                }
-            });
+            const userOrderedTaskList = this.ss.getItem("_unOrderedList") ?? [];
+            if(userOrderedTaskList.length === 0) {
+                tempTaskList = validTask;
+            }
+            else {
+                userOrderedTaskList.forEach((orderedList:any) => {
+                    if(validTask.includes(orderedList)) {
+                        tempTaskList.push(orderedList);
+                    }
+                });
+            }
+
 
         }
         else if(this.currentRobotMode() === 1) {
             const sequence = this.configuration?.sequence?.drop;
+
             sequence.forEach((sequenceId:number) => {
                 const id = String(sequenceId)
                 if(keys.includes(id)) {
                     tempTaskList.push(+sequenceId);
                 }
             })
+
+            this.print.log('Auto Task List =>', tempTaskList);
             // keys.forEach((taskId:any) => {
             //     tempTaskList.push(+taskId);
             // })
         }
-
         return tempTaskList
     }
 
@@ -1266,6 +1275,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     // ===================================================================================================
     // Utils Function
     // ===================================================================================================
+
+    getRobotMode():number {
+        return this.currentRobotMode();
+    }
+
     private currentRobotMode():number {
         const config = this.ss.getItem('_config');
         return config?.robotMode || 2;
