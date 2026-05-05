@@ -186,7 +186,7 @@ class NavitrolClientController {
     getChargingStatus = async(req:Request, res:Response, next:NextFunction) => {
         try {
             const response = await this.fetchData(process.env.CHARGING_STATUS);
-            res.status(200).json({message: 'Charging status of the robot has been fetched', data:response});
+            res.status(200).json({message: 'Charging status of the robot has been fetched', data:response.status});
         } 
         catch (error) {
             this.print.log('API Call Failed: getChargingStatus() in NavitrolClientController');
@@ -252,9 +252,8 @@ class NavitrolClientController {
                 temperature: battery.temperature,
                 speed: speed < 0  ? (-speed) : speed, 
                 currentNode,
-                chargingStatus
+                chargingStatus: chargingStatus.status
             };
-        
             return JSON.stringify(response);
         }
         catch (error) {
