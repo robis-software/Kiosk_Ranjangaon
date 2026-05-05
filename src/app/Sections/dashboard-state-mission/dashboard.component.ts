@@ -810,10 +810,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         clearInterval(this.pickLocationAck['timerRef']);
 
         if(this.currentRobotMode() === 1) {
-            this.timer = this.configuration.waitingTime[this.liveData?.currentNode?.current];
+            this.timer = this.configuration.waitingTime[this.liveData?.currentNode?.current] || 5;
         }
         else if(this.currentRobotMode() === 2) {
-            this.timer = this.configuration.defaultWaitingTime;
+            this.timer = this.configuration.defaultWaitingTime || 30;
         }
         this.calculateTime(this.timer);
         this.dropLocationAck['skip'] = false;
