@@ -22,15 +22,11 @@ export class GeneralComponent implements OnInit {
     print:Print;
     configuration:any;
 
-    waitingTimer:number = 0;
-
-    time:any = {
-        minutes: 0,
-        seconds: 0
-    }
-
     isTimeEditor:boolean = false;
     isSpeedEditor:boolean = false;
+
+    timerLocations:number[] = [];
+    waitingTimer:any;
 
     robotSetSpeed:number = 0;
 
@@ -44,14 +40,20 @@ export class GeneralComponent implements OnInit {
     }
 
     calculateTime(timeInSeconds:number) {
+        let time:any = {
+            minutes: 0,
+            seconds: 0
+        };
         if(timeInSeconds < 59) {
-            this.time['minutes'] = 0;
-            this.time['seconds'] = timeInSeconds;
+            time['minutes'] = 0;
+            time['seconds'] = timeInSeconds;
         }
         else {
-            this.time['minutes'] = Math.trunc(timeInSeconds / 60);
-            this.time['seconds'] = timeInSeconds % 60;
+            time['minutes'] = Math.trunc(timeInSeconds / 60);
+            time['seconds'] = timeInSeconds % 60;
         }
+
+        return time;
     }
 
     rangeInput(event:any, min:number, max:number, from:string) {
@@ -62,10 +64,20 @@ export class GeneralComponent implements OnInit {
         else if(from === 'speed') {
             this.robotSetSpeed = value;
         }
+        else {
+            const ackTimer = from.split('-');
+            if(ackTimer[0] !== 'ackTimer') {
+                this.print.log('Invalid Value');
+                return
+            }
+            else {
+                this.waitingTimer[ackTimer[1]] = +value;
+            }
+        }
     }
 
     private getWaitingTime() {
-        return (this.time['minutes'] * 60) + this.time['seconds']
+        return 50
     }
 
     range(n:number) {
@@ -75,12 +87,20 @@ export class GeneralComponent implements OnInit {
     updateConfigParams(callFor:string) {
         let body:any
         if(callFor === 'ackTimer') {
-            body = {waitingTime: this.getWaitingTime()}
+            body = {waitingTime: this.fillAllLocationsOfWaitingTimer()};
             this.updateConfig(body)
         }
         else if(callFor === 'speed') {
             this.updateSpeed(this.robotSetSpeed);
         }
+    }
+
+    private fillAllLocationsOfWaitingTimer() {
+        this.timerLocations.forEach((locId:number) => {
+            this.waitingTimer[locId] ??= 0;
+        })
+
+        return this.waitingTimer;
     }
 
     private updateSpeed(speed:number){
@@ -133,11 +153,51 @@ export class GeneralComponent implements OnInit {
                     this.print.log('Configuration fetched and Updated in the storage!');
                     this.isTimeEditor = false;
                     this.isSpeedEditor = false;
+                    this.notification.success('Updated Successfully', 'Configuration updated successfully')
                 }
             },
             error: (error:any) => {
                 this.print.error('Error happened while fetching data from the Configuration', error);
+                this.notification.error('Error Happened', 'Error Happened while updating the configuration');
             }
         });
+    }
+
+    async editAckTimer() {
+        this.waitingTimer = {...this.configuration?.waitingTime};
+        this.timerLocations = await this.fetchLocations();
+    }
+
+    generateTime(value:number) {
+        const time:any = this.calculateTime(value);
+        const minutes = time['minutes'] < 10 ? '0'+time['minutes'] : time['minutes']
+        const seconds = time['seconds'] < 10 ? '0'+time['seconds'] : time['seconds']
+        return `${minutes}m${seconds}s`
+    }
+
+    private fetchLocations():Promise<number[]> {
+        return new Promise((resolve, reject) => {
+            const locationToBeIgnored = this.ignoreLocations();
+            this.api.get('navitrol/location-list', {}).subscribe({
+                next: (response:any) => {
+                    this.print.log(response);
+                    const locations = response.data.filter((data:any) => !locationToBeIgnored.includes(data));
+                    this.isTimeEditor = true;
+                    resolve(locations)
+                },
+                error: (error:any) => {
+                    this.print.error('Error Happened while fetching locations in ract-select => ',error);
+                    resolve([]);
+                }
+            })
+        })
+    }
+
+    private ignoreLocations():number[] {
+        const ignoredLocations = [];
+        // Add charging node to the ignorance list
+        ignoredLocations.push(this.configuration?.nodes?.chargingNode);
+        return ignoredLocations;
+
     }
 }

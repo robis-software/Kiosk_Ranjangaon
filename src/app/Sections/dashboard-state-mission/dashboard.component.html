@@ -5,6 +5,7 @@
                 <button
                     (click)="sendRackID(rack)"
                     *ngIf="rack"
+                    [disabled]="getRobotMode() === 1"
                     [ngClass]="{
                         'bg-racks': !rack.isLoaded,
                         'bg-gray-600': rack.isLoaded && !(liveData?.currentNode?.current === +rack.dropLocation && liveData?.currentNode?.status === 13 && dropLocationAck['given']),
@@ -282,7 +283,7 @@
 <!-- ========================================================================================================== -->
 
 <!-- Returning Home UI-->
-<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.homeNode && liveData?.currentNode?.status !== 13 && this.configuration && localisationStatus !== 207 && !isLocaliseDialogOpen" [title]="'Returning!!'" [isClose]="false">
+<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.homeNode && liveData?.currentNode?.status !== 13 && this.configuration && localisationStatus !== 207 && !isLocaliseDialogOpen" [title]="'Returning !'" [isClose]="false">
     <div class="flex flex-col items-start justify-start w-full h-max">
         <div class="flex items-center justify-center w-full py-12 h-max">
             <ranjangaon-icons [icon]="'home-location'" [size]="150" [color]="colors.dialogIcon"></ranjangaon-icons>
@@ -330,7 +331,7 @@
 </fleet-popup>
 
 <!-- Task-Transition popup-->
-<fleet-popup *ngIf="liveData?.live && liveData?.currentNode?.status !== 13 && liveData?.currentNode?.current !== configuration?.nodes?.homeNode &&  liveData?.currentNode?.current !== configuration?.nodes?.chargingNode && liveData?.currentNode?.current !== 0 && localisationStatus !== 207" [isClose]="false" [title]="'Robot Moving!!'">
+<fleet-popup *ngIf="liveData?.live && liveData?.currentNode?.status !== 13 && liveData?.currentNode?.current !== configuration?.nodes?.homeNode &&  liveData?.currentNode?.current !== configuration?.nodes?.chargingNode && liveData?.currentNode?.current !== 0 && localisationStatus !== 207" [isClose]="false" [title]="'Robot Moving !'">
     <div class="flex items-center justify-start w-full gap-6 mt-6 h-max">
         <div class="min-w-[110px] h-[110px] bg-primary flex items-center justify-center rounded-[12px]">
             <ranjangaon-icons [icon]="'robot'" [size]="64" [color]="'#FFF'"></ranjangaon-icons>
@@ -373,7 +374,7 @@
 <!-- ========================================================================================================== -->
 
 <!-- Localisation Popup -->
-<fleet-popup *ngIf="isLocaliseDialogOpen" [isClose]="(localisationScore > configuration.localisation.min) && localisationStatus !== 207" [title]="'Localise Robot!'" (view)="isLocaliseDialogOpen = $event; localisationScore = 0">
+<fleet-popup *ngIf="isLocaliseDialogOpen" [isClose]="(localisationScore > configuration.localisation.min) && localisationStatus !== 207" [title]="'Localise Robot !'" (view)="isLocaliseDialogOpen = $event; localisationScore = 0">
     <div class="flex flex-col items-start justify-start w-full h-max">
 
         <div class="w-max h-[400px] overflow-hidden mt-8 flex items-center justify-center relative">

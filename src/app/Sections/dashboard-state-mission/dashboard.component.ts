@@ -688,7 +688,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.setType('DROP')
                     this.startAcknowledgementTimer();
                 }
-
                 this.isRotationTaskSent = false;
             }
         }, 1000)
@@ -810,7 +809,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         clearInterval(this.dropLocationAck['timerRef']);
         clearInterval(this.pickLocationAck['timerRef']);
 
-        this.timer = this.configuration.waitingTime;
+        this.timer = this.configuration.waitingTime[this.liveData?.currentNode?.current];
         this.calculateTime(this.timer);
         this.dropLocationAck['skip'] = false;
         this.pickLocationAck['skip'] = false;
