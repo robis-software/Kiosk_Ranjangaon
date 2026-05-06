@@ -101,14 +101,15 @@ export class HeaderComponent implements OnInit {
 
     private setRobotMode(mode:number) {
         this.api.put('configuration', {robotMode: mode}, {authorization: 'Bearer Robis-motherson@123'}).subscribe({
-            next: (response:any) => {
+            next: async(response:any) => {
                 if(response.data) {
                     this.config = response.data;
                     this.robotActionMode = this.config?.robotMode || 1;
                     this.ss.setItem('_config', response.data);
                     this.print.log('Configuration fetched and Updated in the storage!');
                     this.notification.success('Robot Mode Changed', 'Robot mode changed and updated successfully');
-                    this.ss.setItem('_taskList', {});
+                    // this.ss.setItem('_taskList', {});
+                    await this.setTaskListBasedOnMode(this.robotActionMode);
                     this.print.log('Mode is getting cleared!!')
                 }
             },
@@ -119,8 +120,126 @@ export class HeaderComponent implements OnInit {
         });
     }
 
+    async setTaskListBasedOnMode(mode:number) {
+        if(mode === 1) {
+            const taskList = this.fetchTaskListFromSS();
+            if(this.isTaskListEmpty(taskList) && this.currentRobotMode() === 1) {
+                console.log('Assgin new Drop Sequence to ss')
+                await this.generateAutoModeDropSequence();
+            }
+        }
+        else if(mode === 2) {
+            this.ss.setItem('_taskList', {});
+        }
+    }
+
     private currentRobotMode():number {
         const config = this.ss.getItem('_config');
         return config?.robotMode || 1;
+    }
+
+
+    // Utils for setTaskListBasedOnMode()
+    // private async preloadAutoModeDropSequence():Promise<void> {
+    //     this.autoModeDropSequence = await this.generateAutoModeDropSequence();
+    //     this.print.log("Preload Auto Seqeunce",this.autoModeDropSequence);
+    // }
+
+    private async generateAutoModeDropSequence(){
+        const dropLocations = await this.fetchLocations();
+        this.config?.sequence?.drop.forEach((location:number) => {
+            if(dropLocations.includes(location)) {
+                this.addTask(+location);
+            }
+            else {
+                this.print.error('Location that is configured is not available in the drop location list from the robot, check')
+            }
+        });
+
+        return this.ss.getItem('_taskList') ?? {}
+    }
+
+    private fetchLocations():Promise<number[]> {
+        return new Promise((resolve, reject) => {
+            const locationToBeIgnored = this.ignoreLocations();
+            this.api.get('navitrol/location-list', {}).subscribe({
+                next: (response:any) => {
+                    this.print.log(response);
+                    const locations = response.data.filter((data:any) => !locationToBeIgnored.includes(data));
+                    resolve(locations)
+                },
+                error: (error:any) => {
+                    this.print.error('Error Happened while fetching locations in ract-select => ',error);
+                    resolve([]);
+                }
+            })
+        })
+    }
+
+    private ignoreLocations():number[] {
+        const ignoredLocations = [];
+        const lenOfPickNodeList = this.config?.nodes?.pickNode.length;
+
+        // Pick Nodes added to the ignorance list
+        for(let i=0; i<lenOfPickNodeList; i++) {
+            ignoredLocations.push(this.config?.nodes?.pickNode[i])
+        }
+
+        // Add charging node to the ignorance list
+        ignoredLocations.push(this.config?.nodes?.chargingNode, this.config?.nodes?.homeNode);
+        return ignoredLocations;
+
+    }
+
+    private addTask(id:number) {
+        // Step 1: Check whether there is Location entered
+        let temp = this.fetchTaskListFromSS();
+        this.print.log('Current Task List -> Auto', temp);
+        temp[+id] = [0];
+        this.print.log({locations: Object.keys(temp), racks: Object.values(temp)});
+        this.ss.setItem('_taskList', temp);
+    }
+
+    private fetchTaskListFromSS():any {
+        let tasks:any;
+
+        // if(this.currentRobotMode() === 2) {
+        //     tasks = this.ss.getItem('_taskList');
+        // }
+        // else if(this.currentRobotMode() === 1) {
+        //     tasks = this.autoModeDropSequence;
+        //     this.print.log("Auto Sequence",tasks)
+        // }
+
+        tasks = this.ss.getItem('_taskList');
+
+        if(tasks === undefined || tasks === null) {
+            return {}
+        }
+        else {
+            return tasks
+        }
+    }
+
+    /**
+     * Used to check that the task list is empty or not
+     * @param list : Task List
+     * @returns boolean
+     */
+    private isTaskListEmpty(list:any):boolean {
+        const racks = Object.values(list);
+
+        if(racks.length === 0) {
+            return true
+        }
+
+        let flag = 0;
+
+        racks.forEach((rack:any) => {
+            if(rack.length !== 0) {
+                flag+=1;
+            }
+        })
+        return flag === 0
     }
 }

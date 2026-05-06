@@ -247,6 +247,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             if(data?.live) {
                 this.liveData = data;
                 this.print.log(data?.currentNode);
+                this.print.log('Error',data?.error)
                 const condition = [RobotState.CHARGER_CONNECTED, RobotState.CHARGING, RobotState.CHARGING_COMPLETE_ACK];
                 if((data?.chargingStatus === 1) && (!condition.includes(this.currentState))) {
                     this.setState(RobotState.CHARGING);
@@ -1165,7 +1166,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         return new Promise((resolve, reject)=> {
             this.api.get('navitrol/charging-status', {}).subscribe({
                 next: (response:any) => {
-                    resolve(response.data === 1 ? true : false);
+                    resolve(response.data === 1);
                 },
                 error: (error:any) => {
                     this.print.error('Error Happened while fetching locations in ract-select => ',error);
@@ -1238,7 +1239,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
         }
-        else if(this.currentRobotMode() === 1) {
+        else if(this.currentRobotMode() === 1 && !this.isDropTaskSent) {
             const sequence = this.configuration?.sequence?.drop;
 
             sequence.forEach((sequenceId:number) => {
