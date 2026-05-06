@@ -139,7 +139,7 @@
 </fleet-popup>
 
 <!-- Robot Charging UI -->
-<fleet-popup *ngIf="liveData?.currentNode?.current === configuration?.nodes?.chargingNode && liveData?.currentNode?.status === 13 && (currentState === robotState.CHARGER_CONNECTED || currentState === robotState.CHARGING) || (currentState === robotState.CHARGER_CONNECTED || currentState === robotState.CHARGING)" [title]="'Charging Mode !'" [isClose]="false">
+<fleet-popup *ngIf="(liveData?.currentNode?.current === configuration?.nodes?.chargingNode && liveData?.currentNode?.status === 13 && (currentState === robotState.CHARGER_CONNECTED || currentState === robotState.CHARGING)) || (currentState === robotState.CHARGER_CONNECTED || currentState === robotState.CHARGING)" [title]="'Charging Mode !'" [isClose]="false">
     <div class="w-full h-full">
         <div class="w-max h-[400px] overflow-hidden mt-8 flex items-center justify-center relative">
             <ranjangaon-circular-indicator [angle]="360" [size]="500" [color]="batteryIndicatorColor(liveData?.battery)" [data]="+liveData?.battery || 30" [rotate]="-90" >

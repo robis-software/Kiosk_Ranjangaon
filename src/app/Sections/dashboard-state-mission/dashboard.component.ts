@@ -248,7 +248,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.liveData = data;
                 this.print.log(data?.currentNode);
                 const condition = [RobotState.CHARGER_CONNECTED, RobotState.CHARGING, RobotState.CHARGING_COMPLETE_ACK];
-                if(data?.chargingStatus === 1 && !condition.includes(this.currentState)) {
+                if((data?.chargingStatus === 1) && (!condition.includes(this.currentState))) {
                     this.setState(RobotState.CHARGING);
                 }
             }
@@ -281,11 +281,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     private async stateMachine(data:any) {
         const nodes:any = this.configuration?.nodes;
-        const taskList = this.fetchTaskListFromSS();
-        if(this.isTaskListEmpty(taskList) && this.currentRobotMode() === 1 && !this.isDropTaskSent) {
-            console.log('Assgin new Drop Sequence to ss')
-            await this.preloadAutoModeDropSequence();
-        }
+        // const taskList = this.fetchTaskListFromSS();
+        // if(this.isTaskListEmpty(taskList) && this.currentRobotMode() === 1 && !this.isDropTaskSent) {
+        //     console.log('Assgin new Drop Sequence to ss')
+        //     await this.preloadAutoModeDropSequence();
+        // }
 
         // Check the robot mode
         this.robotMode = this.currentRobotMode();
@@ -325,6 +325,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.isDropTaskSent = false;
                 }
                 else if(!this.isPickTaskSent) {
+                    const taskList = this.fetchTaskListFromSS();
+                    if(this.isTaskListEmpty(taskList) && this.currentRobotMode() === 1 && !this.isDropTaskSent) {
+                        console.log('Assgin new Drop Sequence to ss')
+                        await this.preloadAutoModeDropSequence();
+                    }
+
                     const nodes = this.generatePickLocations();
                     this.ss.setItem('_pivotPoints', this.configuration?.pivotPoints);
                     this.print.log('Pick Task is generated from IDLE state and it is sent!!');
@@ -509,7 +515,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                         // this.pickAPI.completeTask(this.liveData?.currentNode?.current);
                         this.createdTaskList = this.fetchTaskListFromSS();
                         // This is checked when there is no empty task list
-                        if(this.isTaskListEmpty(this.createdTaskList) && this.currentRobotMode() === 2) {
+                        // if(this.isTaskListEmpty(this.createdTaskList) && this.currentRobotMode() === 2) {
+                        if(this.isTaskListEmpty(this.createdTaskList)) {
                             this.isPickTaskSent = false;
                             this.isDropTaskSent = false;
                             await this.taskAPI.createTask([nodes?.homeNode]); // Consider it as a normal homeNode Task and not as pick task
