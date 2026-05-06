@@ -234,12 +234,13 @@ class NavitrolClientController {
 
     private async liveResponse():Promise<string> {
         try {
-            const [localisation, battery, speed, currentNode, chargingStatus] = await Promise.all([
+            const [localisation, battery, speed, currentNode, chargingStatus, error] = await Promise.all([
                 this.fetchData(process.env.LOCALIZATION),
                 this.fetchData(process.env.BATTERY),
                 this.fetchData(process.env.SPEED),
                 this.fetchData(process.env.CURRENT_NODE),
-                this.fetchData(process.env.CHARGING_STATUS)
+                this.fetchData(process.env.CHARGING_STATUS),
+                this.fetchData(process.env.CATCH_ERROR)
             ]);
 
             const live = !!(localisation && (+battery?.percentage >= 0) && (speed !== null) && currentNode) ;
@@ -252,7 +253,8 @@ class NavitrolClientController {
                 temperature: battery.temperature,
                 speed: speed < 0  ? (-speed) : speed, 
                 currentNode,
-                chargingStatus: chargingStatus.status
+                chargingStatus: chargingStatus.status,
+                error
             };
             return JSON.stringify(response);
         }
